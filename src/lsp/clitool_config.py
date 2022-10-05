@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class OutputParsingConfig(BaseModel):
     """Config for the output of CLI tools"""
 
-    format: str = Field(None)
+    formats: List[str] = Field()
     """
     Token definitions for parsing the output of the CLI tool.
     This a Python token string that defines the components of a parsable line.
@@ -27,18 +27,18 @@ class OutputParsingConfig(BaseModel):
 class CLIToolConfig(BaseModel):
     """Configuration options for the server."""
 
-    language_id: str = Field(None)
+    language_id: str = Field()
     """
     The language to which will trigger this CLI tool behaviour.
     Must be a `language_id` recognised by LSP, eg; `json`, `python`, etc
     """
 
-    command: List[str] = Field(None)
+    command: List[str] = Field()
     """
     The command to run, eg; `["jsonlint", "--strict"]`
     """
 
-    parsing: OutputParsingConfig = Field(None)
+    parsing: OutputParsingConfig = Field()
     """Config for the output of CLI tools"""
 
 

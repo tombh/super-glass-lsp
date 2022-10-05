@@ -18,16 +18,19 @@ pytest = "^7.1.3"
 flake8 = "^5.0.4"
 mypy = "^0.982"
 black = "^22.8.0"
+pytest-mock = "^3.10.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[flake8]
-max-line-length = 100
-# ignore = E501
-
 [tool.mypy]
 exclude = [
     "src/main.py"
 ]
+
+[tool.pylsp-mypy]
+enabled = true
+live_mode = false
+dmypy = true
+strict = false
