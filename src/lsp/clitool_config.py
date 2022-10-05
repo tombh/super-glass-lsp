@@ -13,7 +13,7 @@ class OutputParsingConfig(BaseModel):
     `{msg}`, `{line:d}` and `{col:d}` are required.
     Eg; "{msg} at line {line:d}, column {col:d}"
 
-    See: https://docs.python.org/3/library/string.html#format-specification-mini-language  # nopep8
+    See: https://docs.python.org/3/library/string.html#format-specification-mini-language  # noqa
     """
 
     line_offset: Optional[int] = Field(0)

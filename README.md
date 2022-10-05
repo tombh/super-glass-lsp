@@ -11,3 +11,7 @@ Probably will only ever support LSP diagnostics and formatting.
 * [ ] Docs
 * [ ] Use public version of Pygls
 * [ ] Add tests
+
+## Testing
+
+`poetry run python -m pytest`

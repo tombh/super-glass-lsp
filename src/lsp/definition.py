@@ -4,11 +4,19 @@ import typing
 from typing import Dict, List, Optional
 
 from parse import parse  # type: ignore
-from pygls.lsp.methods import (INITIALIZE, TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_OPEN)
-from pygls.lsp.types import (Diagnostic, DidChangeTextDocumentParams,
-                             DidOpenTextDocumentParams, InitializeParams,
-                             Position, Range)
+from pygls.lsp.methods import (
+    INITIALIZE,
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_OPEN,
+)
+from pygls.lsp.types import (
+    Diagnostic,
+    DidChangeTextDocumentParams,
+    DidOpenTextDocumentParams,
+    InitializeParams,
+    Position,
+    Range,
+)
 from pygls.server import LanguageServer
 
 from .clitool_config import InitializationOptions
@@ -93,7 +101,7 @@ def diagnose(uri: str):
     if server.configuration is None:
         return
 
-    # TODO: onlty run the CLI tools that match the current language ID
+    # TODO: only run the CLI tools that match the current language ID
     config = server.configuration.clitool_configs[0]
 
     if document.language_id != config.language_id:

@@ -7,6 +7,7 @@
 *.log
 *.mo
 
+.dmypy.json
 .mypy_cache
 __pycache__
 _build
