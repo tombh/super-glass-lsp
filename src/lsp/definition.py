@@ -1,7 +1,7 @@
 import logging
 import subprocess
 import typing
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from parse import parse  # type: ignore
 from pygls.lsp.methods import (INITIALIZE, TEXT_DOCUMENT_DID_CHANGE,
@@ -27,13 +27,9 @@ class CLIToolsLanguageServer(LanguageServer):
         )
 
     @property
-    def configuration(self) -> Dict[str, Any]:
+    def configuration(self) -> Optional[InitializationOptions]:
         """Return the server's actual configuration."""
-        if not self.user_config:
-            return {}
-
-        # TODO: research if there is an equivalent .dataclass() converter
-        return self.user_config.dict()
+        return self.user_config
 
 
 server = CLIToolsLanguageServer()
@@ -94,14 +90,17 @@ def parse_line(
 def diagnose(uri: str):
     document = server.workspace.get_document(uri)
 
-    # TODO: onlty run the CLI tools that match the current language ID
-    config = server.configuration["clitool_configs"][0]
+    if server.configuration is None:
+        return
 
-    if document.language_id != config["language_id"]:
+    # TODO: onlty run the CLI tools that match the current language ID
+    config = server.configuration.clitool_configs[0]
+
+    if document.language_id != config.language_id:
         return
 
     result = subprocess.run(
-        config["command"],
+        config.command,
         input=document.source,
         text=True,
         capture_output=True,
@@ -116,13 +115,21 @@ def diagnose(uri: str):
         server.publish_diagnostics(document.uri, diagnostics)
         return
 
-    logging.error(msg=config["parsing"]["format"])
+    logging.error(msg=config.parsing.format)
+
+    line_offset = 0
+    if config.parsing.line_offset is not None:
+        line_offset = config.parsing.line_offset
+
+    col_offset = 0
+    if config.parsing.col_offset is not None:
+        col_offset = config.parsing.col_offset
 
     for line in output.splitlines():
         diagnostic = parse_line(
-            config["parsing"]["format"],
-            config["parsing"]["line_offset"],
-            config["parsing"]["col_offset"],
+            config.parsing.format,
+            line_offset,
+            col_offset,
             line,
         )
         diagnostics.append(diagnostic)
