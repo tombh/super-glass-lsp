@@ -1,4 +1,4 @@
-from lsp.server import server  # type: ignore
+from lsp.setup import server  # type: ignore
 
 if __name__ == "__main__":
     print("Starting CLI Tools LSP server on STDIO...")
