@@ -3,7 +3,7 @@ from typing import List, Optional, TYPE_CHECKING
 import logging
 
 if TYPE_CHECKING:
-    from .definition import CLIToolsLanguageServer
+    from src.lsp.server import CustomLanguageServer
 
 import subprocess
 
@@ -14,11 +14,11 @@ from pygls.lsp.types import (
     Range,
 )
 
-from .clitool_config import CLIToolConfig, OutputParsingConfig
+from .config import CLIToolConfig, OutputParsingConfig
 
 
 class Diagnoser:
-    def __init__(self, server: "CLIToolsLanguageServer"):
+    def __init__(self, server: "CustomLanguageServer"):
         self.server = server
 
         # TODO: use the name of the CLI tool

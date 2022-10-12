@@ -1,17 +1,19 @@
 import pytest  # noqa
 
-from src.lsp.definition import CLIToolsLanguageServer
-from src.lsp.diagnoser import Diagnoser
-from src.lsp.clitool_config import CLIToolConfig
+from src.lsp.server import CustomLanguageServer
+from src.lsp.custom.diagnoser import Diagnoser
+from src.lsp.custom.config import CLIToolConfig
 
 
 def test_supplying_multiple_output_formatters(mocker):
     cli_output = "\n".join(
         ["stdin:1:2 all", "stdin:11 no col", "stdin just the message"]
     )
-    mocker.patch("src.lsp.diagnoser.Diagnoser.run_cli_tool", return_value=cli_output)
+    mocker.patch(
+        "src.lsp.custom.diagnoser.Diagnoser.run_cli_tool", return_value=cli_output
+    )
 
-    server = CLIToolsLanguageServer()
+    server = CustomLanguageServer()
     diagnoser = Diagnoser(server)
 
     client_config = {
