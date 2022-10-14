@@ -7,33 +7,52 @@ This project has 2 goals.
 
 Because the heavy-lifting of this language server is done by external tooling (think `pylint`, `jq`, `markdownlint`, etc), there is minimal implementation-specific code in this repo. That is to say that the majority of the code here is applicable to any language server built with Pygls. Or at the very least, it demonstrates a reasonable starting point. Deleting the `src/lsp/custom` folder should leave the codebase as close as possible to the minimum starting point for your own custom language server. You will also want to rename occurrences of `[C|c]ustom` to your own language server's name.
 
+## Installation
+
+`pip install cli-tools-lsp`
+
 ## Usage
 
 ### Example Neovim Lua config
 
+Since this project is very beta, we're not yet submitting this language server to the LSP Config plugin (the defacto way to add new language servers). Therefore, for now, we have to use Neovim's vanilla LSP setup (which has actually simplified a lot recently).
+
 ```lua
-clitool_configs = {
-	{
-		language_id = "markdown",
-		command = { "markdownlint", "--stdin" },
-		parsing = {
-			formats = {
-				"stdin:{line:d}:{col:d} {msg}",
-				"stdin:{line:d} {msg}",
-				"stdin {msg}",
+vim.api.nvim_create_autocmd({ "BufEnter" }, {
+	-- NB: You must remember to manually put the file extension matchers for each LSP filetype
+	pattern = { "*.md", "*.json" },
+	callback = function()
+		vim.lsp.start({
+			name = "clitools",
+			cmd = { "cli-tools-lsp" },
+			root_dir = vim.fs.dirname(vim.fs.find({ "setup.py", "pyproject.toml" }, { upward = true })[1]),
+			init_options = {
+				clitool_configs = {
+					{
+						language_id = "markdown",
+						command = { "markdownlint", "--stdin" },
+						parsing = {
+							formats = {
+								"stdin:{line:d}:{col:d} {msg}",
+								"stdin:{line:d} {msg}",
+								"stdin {msg}",
+							},
+							line_offset = -1,
+							col_offset = -1,
+						},
+					},
+					{
+						language_id = "json",
+						command = { "jq", "." },
+						parsing = {
+							formats = { "{msg} at line {line:d}, column {col:d}" },
+						},
+					},
+				},
 			},
-			line_offset = -1,
-			col_offset = -1,
-		},
-	},
-	{
-		language_id = "json",
-		command = { "jq", "." },
-		parsing = {
-			formats = { "{msg} at line {line:d}, column {col:d}" },
-		},
-	},
-},
+		})
+	end,
+})
 ```
 
 ## Testing

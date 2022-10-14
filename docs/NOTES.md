@@ -17,3 +17,9 @@ Heyyyyyyy these are the docs
   },
 }
 ```
+
+### Releasing
+
+* `python build`
+* This version of the command is for pasting the password whilst live streaming:
+  `(read -s PYPI_PASSWORD && poetry publish --username tombh --password "$PYPI_PASSWORD")`
