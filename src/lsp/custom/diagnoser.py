@@ -28,16 +28,12 @@ class Diagnoser:
         if self.server.configuration is None:
             return
 
-        # TODO: only run the CLI tools that match the current language ID
-        config = self.server.configuration.clitool_configs[0]
-
         document = self.server.workspace.get_document(uri)
 
-        if document.language_id != config.language_id:
-            return
-
-        diagnostics = self.diagnose(document.source, config)
-        self.server.publish_diagnostics(document.uri, diagnostics)
+        for config in self.server.configuration.clitool_configs:
+            if document.language_id == config.language_id:
+                diagnostics = self.diagnose(document.source, config)
+                self.server.publish_diagnostics(document.uri, diagnostics)
 
     def build_diagnostic_object(
         self, message: str, line: int = 0, col: int = 0
