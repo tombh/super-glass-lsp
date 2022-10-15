@@ -26,6 +26,52 @@ def on_initialize(params: InitializeParams):
     """
     The initialize request is sent as the first request from the client to the server.
 
+    `params` notable/illustrative fields (non-exhaustive):
+    ```
+    {
+        process_id: Optional[int]
+        root_uri: Optional[str]
+        capabilities: {
+            workspace: Optional[WorkspaceClientCapabilities]
+            text_document: Optional[TextDocumentClientCapabilities {
+                completion: Optional[CompletionClientCapabilities {
+                    dynamic_registration: Optional[bool]
+                    completion_item: Optional[CompletionItemClientCapabilities]
+                    completion_item_kind: Optional[CompletionItemKindClientCapabilities]
+                    context_support: Optional[bool]
+                }]
+                hover: Optional[HoverClientCapabilities]
+                signature_help: Optional[SignatureHelpClientCapabilities]
+                declaration: Optional[DeclarationClientCapabilities]
+                definition: Optional[DefinitionClientCapabilities]
+                type_definition: Optional[TypeDefinitionClientCapabilities]
+                implementation: Optional[ImplementationClientCapabilities]
+                references: Optional[ReferenceClientCapabilities]
+                document_highlight: Optional[DocumentHighlightClientCapabilities]
+                document_symbol: Optional[DocumentSymbolClientCapabilities]
+                code_action: Optional[CodeActionClientCapabilities]
+                code_lens: Optional[CodeLensClientCapabilities]
+                ...
+            }]
+            window: Optional[WindowClientCapabilities]
+            general: Optional[GeneralClientCapabilities]
+            ...
+        }
+        client_info: Optional[{
+            name: str
+            version: Optional[str]
+        }]
+        locale: Optional[str]
+        root_path: Optional[str]
+        initialization_options: Optional[Any]
+        trace: Optional[Trace]
+        workspace_folders: Optional[List[ WorkspaceFolder {
+            uri: str
+            name: str
+        }]]
+    }
+    ```
+
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize
     """
     server.initialize(params)
@@ -36,6 +82,21 @@ async def did_change(ls: CustomLanguageServer, params: DidChangeTextDocumentPara
     """
     The document change notification is sent from the client to the server to signal
     changes to a text document.
+
+    `params` notable/illustrative fields (non-exhaustive):
+    ```
+        {
+            text_document: VersionedTextDocumentIdentifier {
+                uri: str
+                language_id: str
+                version: NumType
+                text: str
+                ...
+            }
+            content_changes: ...
+            ...
+        }
+    ```
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didChange
     """
@@ -54,6 +115,20 @@ async def did_open(ls: CustomLanguageServer, params: DidOpenTextDocumentParams):
     open and close notification must be balanced and the max open count for a particular
     textDocument is one. Note that a server’s ability to fulfill requests is independent
     of whether a text document is open or closed.
+
+    `params` notable/illustrative fields (non-exhaustive):
+    ```
+        {
+            text_document: TextDocumentItem {
+                uri: str
+                language_id: str
+                version: NumType
+                text: str
+                ...
+            }
+            ...
+        }
+    ```
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen
     """
