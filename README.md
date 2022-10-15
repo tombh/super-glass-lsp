@@ -19,53 +19,53 @@ Since this project is very beta, we're not yet submitting this language server t
 
 ```lua
 vim.api.nvim_create_autocmd({ "BufEnter" }, {
-	-- NB: You must remember to manually put the file extension matchers for each LSP filetype
-	pattern = { "*.md", "*.json" },
-	callback = function()
-		vim.lsp.start({
-			name = "clitools",
-  			cmd = { "cli-tools-lsp" },
-			root_dir = vim.fs.dirname(vim.fs.find({ "setup.py", "pyproject.toml" }, { upward = true })[1]),
-			init_options = {
-				configs = {
-					markdownlint = {
-						enabled = "false",
-						lsp_feature = "diagnostic",
-						language_id = "markdown",
-						command = { "markdownlint", "--stdin" },
-						parsing = {
-							formats = {
-								"stdin:{line:d}:{col:d} {msg}",
-								"stdin:{line:d} {msg}",
-								"stdin {msg}",
-							},
-							line_offset = -1,
-							col_offset = -1,
-						},
-					},
-					jqlint = {
-						lsp_feature = "diagnostic",
-						language_id = "json",
-						command = { "jq", "." },
-						parsing = {
-							formats = { "{msg} at line {line:d}, column {col:d}" },
-						},
-					},
-					fuzzybuffertokens = {
-						enabled = true,
-						lsp_feature = "completion",
-						language_id = "python",
-						command = {
-							"bash",
-							"-c",
-							-- # `{cursor_line}` and `{cursor_row}` should also be available
-							"cat {file} | tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
-						},
-					},
-				}
-			},
-		})
-	end,
+  -- NB: You must remember to manually put the file extension matchers for each LSP filetype
+  pattern = { "*.md", "*.json" },
+  callback = function()
+    vim.lsp.start({
+      name = "clitools",
+      cmd = { "cli-tools-lsp" },
+      root_dir = vim.fs.dirname(vim.fs.find({ "setup.py", "pyproject.toml" }, { upward = true })[1]),
+      init_options = {
+        configs = {
+          markdownlint = {
+            enabled = "false",
+            lsp_feature = "diagnostic",
+            language_id = "markdown",
+            command = { "markdownlint", "--stdin" },
+            parsing = {
+              formats = {
+                "stdin:{line:d}:{col:d} {msg}",
+                "stdin:{line:d} {msg}",
+                "stdin {msg}",
+              },
+              line_offset = -1,
+              col_offset = -1,
+            },
+          },
+          jqlint = {
+            lsp_feature = "diagnostic",
+            language_id = "json",
+            command = { "jq", "." },
+            parsing = {
+              formats = { "{msg} at line {line:d}, column {col:d}" },
+            },
+          },
+          fuzzybuffertokens = {
+            enabled = true,
+            lsp_feature = "completion",
+            language_id = "markdown",
+            command = {
+              "bash",
+              "-c",
+              -- # `{cursor_line}` and `{cursor_row}` should also be available
+              "cat {file} | tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
+            },
+          },
+        }
+      },
+    })
+  end,
 })
 ```
 
