@@ -1,5 +1,11 @@
 from typing import Optional
 
+from pygls.capabilities import COMPLETION
+from pygls.lsp import (
+    CompletionParams,
+    CompletionOptions,
+    CompletionList,
+)
 from pygls.lsp.methods import (
     INITIALIZE,
     TEXT_DOCUMENT_DID_CHANGE,
@@ -78,7 +84,7 @@ def on_initialize(params: InitializeParams):
 
 
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
-async def did_change(ls: CustomLanguageServer, params: DidChangeTextDocumentParams):
+async def did_change(params: DidChangeTextDocumentParams):
     """
     The document change notification is sent from the client to the server to signal
     changes to a text document.
@@ -100,11 +106,11 @@ async def did_change(ls: CustomLanguageServer, params: DidChangeTextDocumentPara
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didChange
     """
-    CustomFeatures.did_change(ls, params)
+    CustomFeatures.did_change(server, params)
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls: CustomLanguageServer, params: DidOpenTextDocumentParams):
+async def did_open(params: DidOpenTextDocumentParams):
     """
     The document open notification is sent from the client to the server to signal
     newly opened text documents. The document’s content is now managed by the client
@@ -132,13 +138,42 @@ async def did_open(ls: CustomLanguageServer, params: DidOpenTextDocumentParams):
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen
     """
-    CustomFeatures.did_open(ls, params)
+    CustomFeatures.did_open(server, params)
+
+
+# TODO: why aren't completions async?
+@server.feature(
+    COMPLETION,
+    CompletionOptions(
+        trigger_characters=[">", ".", ":", "`", "<", "/"], resolve_provider=False
+    ),
+)
+async def completions(params: CompletionParams) -> Optional[CompletionList]:
+    """
+    The Completion request is sent from the client to the server to compute completion
+    items at a given cursor position.
+
+    `params` notable/illustrative fields (non-exhaustive):
+    ```
+    {
+        text_document: TextDocumentIdentifier {
+            uri: str
+        }
+        position: Position {
+            line: int
+            character: int
+        }
+        ...
+    }
+    ```
+
+    https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
+    """
+    return CustomFeatures.completion_request(server, params)
 
 
 @server.command(CUSTOM_SERVER_CONFIG_COMMAND)
-def show_configuration(
-    ls: CustomLanguageServer, *args
-) -> Optional[custom_config.InitializationOptions]:
+def show_configuration(*args) -> Optional[custom_config.InitializationOptions]:
     """
     Returns the server's configuration.
 
@@ -150,7 +185,7 @@ def show_configuration(
     It is however useful for end to end tests, to make sure that the LSP server made
     a basic successful startup.
     """
-    config = ls.configuration
-    ls.logger.debug("%s: %s", CUSTOM_SERVER_CONFIG_COMMAND, dump(config))
+    config = server.configuration
+    server.logger.debug("%s: %s", CUSTOM_SERVER_CONFIG_COMMAND, dump(config))
 
     return config

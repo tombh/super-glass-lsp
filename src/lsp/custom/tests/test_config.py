@@ -23,15 +23,16 @@ async def test_initialization():
         server_command=SERVER_CMD,
         root_uri=root_uri,
         initialization_options={
-            "clitool_configs": [
-                {
+            "configs": {
+                "foobar": {
+                    "lsp_feature": "diagnostic",
                     "language_id": "foo",
                     "command": ["foo", "bar"],
                     "parsing": {
                         "formats": ["{msg} at line {line:d}, column {col:d}"],
                     },
                 }
-            ]
+            }
         },
         client_factory=make_test_client,
     )
@@ -44,7 +45,7 @@ async def test_initialization():
             CUSTOM_SERVER_CONFIG_COMMAND
         )
 
-        assert configuration["clitool_configs"][0]["language_id"] == "foo"
+        assert configuration["configs"]["foobar"]["language_id"] == "foo"
 
     finally:
         await cs.stop()

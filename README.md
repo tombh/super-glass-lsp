@@ -24,11 +24,13 @@ vim.api.nvim_create_autocmd({ "BufEnter" }, {
 	callback = function()
 		vim.lsp.start({
 			name = "clitools",
-			cmd = { "cli-tools-lsp" },
+  			cmd = { "cli-tools-lsp" },
 			root_dir = vim.fs.dirname(vim.fs.find({ "setup.py", "pyproject.toml" }, { upward = true })[1]),
 			init_options = {
-				clitool_configs = {
-					{
+				configs = {
+					markdownlint = {
+						enabled = "false",
+						lsp_feature = "diagnostic",
 						language_id = "markdown",
 						command = { "markdownlint", "--stdin" },
 						parsing = {
@@ -41,14 +43,26 @@ vim.api.nvim_create_autocmd({ "BufEnter" }, {
 							col_offset = -1,
 						},
 					},
-					{
+					jqlint = {
+						lsp_feature = "diagnostic",
 						language_id = "json",
 						command = { "jq", "." },
 						parsing = {
 							formats = { "{msg} at line {line:d}, column {col:d}" },
 						},
 					},
-				},
+					fuzzybuffertokens = {
+						enabled = true,
+						lsp_feature = "completion",
+						language_id = "python",
+						command = {
+							"bash",
+							"-c",
+							-- # `{cursor_line}` and `{cursor_row}` should also be available
+							"cat {file} | tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
+						},
+					},
+				}
 			},
 		})
 	end,

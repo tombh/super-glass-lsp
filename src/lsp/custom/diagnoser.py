@@ -14,7 +14,7 @@ from pygls.lsp.types import (
     Range,
 )
 
-from .config import CLIToolConfig, OutputParsingConfig
+from .config import CLIToolConfig, OutputParsingConfig, LSPFeature
 
 
 class Diagnoser:
@@ -24,13 +24,17 @@ class Diagnoser:
         # TODO: use the name of the CLI tool
         self.name = type(server).__name__
 
+    # TODO: test as e2e
     def run(self, uri: str) -> None:
         if self.server.configuration is None:
             return
 
         document = self.server.workspace.get_document(uri)
 
-        for config in self.server.configuration.clitool_configs:
+        configs = self.server.configuration.get_all_by(
+            LSPFeature.diagnostic, document.language_id
+        )
+        for _id, config in configs.items():
             if document.language_id == config.language_id:
                 diagnostics = self.diagnose(document.source, config)
                 self.server.publish_diagnostics(document.uri, diagnostics)

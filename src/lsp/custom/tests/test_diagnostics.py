@@ -16,7 +16,8 @@ def test_supplying_multiple_output_formatters(mocker):
     server = CustomLanguageServer()
     diagnoser = Diagnoser(server)
 
-    client_config = {
+    config_from_client = {
+        "lsp_feature": "diagnostic",
         "language_id": "testing",
         "command": [""],
         "parsing": {
@@ -27,7 +28,7 @@ def test_supplying_multiple_output_formatters(mocker):
             ]
         },
     }
-    config = CLIToolConfig(**client_config)
+    config = CLIToolConfig(**config_from_client)
 
     diagnostics = diagnoser.diagnose("", config)
 

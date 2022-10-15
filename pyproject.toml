@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cli-tools-lsp"
-version = "0.1.1"
+version = "0.2.0"
 description = "Generic LSP to parse the output of CLI tools, linters, formatters, etc"
 authors = ["Thomas Buckley-Houston <tom@tombh.co.uk>"]
 license = "MIT"
