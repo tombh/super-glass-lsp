@@ -3,7 +3,6 @@ from typing import Optional
 from pygls.capabilities import COMPLETION
 from pygls.lsp import (
     CompletionParams,
-    CompletionOptions,
     CompletionList,
 )
 from pygls.lsp.methods import (
@@ -141,13 +140,7 @@ async def did_open(params: DidOpenTextDocumentParams):
     CustomFeatures.did_open(server, params)
 
 
-# TODO: why aren't completions async?
-@server.feature(
-    COMPLETION,
-    CompletionOptions(
-        trigger_characters=[">", ".", ":", "`", "<", "/"], resolve_provider=False
-    ),
-)
+@server.feature(COMPLETION)
 async def completions(params: CompletionParams) -> Optional[CompletionList]:
     """
     The Completion request is sent from the client to the server to compute completion

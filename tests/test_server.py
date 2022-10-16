@@ -27,7 +27,11 @@ async def test_initialization():
 
     cs = make_client_server(cs_config)
     try:
-        await cs.start()
+        response = await cs.start()
+
+        # Check that basic file open/close support is enabled
+        assert response["capabilities"]["textDocumentSync"]["openClose"]
+        # That there are no surprising errors etc
         assert len(cs.client.messages) == 0
 
     finally:
