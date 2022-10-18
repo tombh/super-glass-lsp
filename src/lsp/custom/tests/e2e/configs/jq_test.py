@@ -25,10 +25,14 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
     client.notify_did_change(uri, bad)
     client.notify_did_save(uri, bad)
 
-    # TODO: Why do we have to wait? Isn't the notification enough
-    # Maybe there are better notifications to wait for? Even make our own one?
-    # await client.wait_for_notification("textDocument/publishDiagnostics")
-    time.sleep(1)
+    # First notification is for the "good" version, that there are no errors
+    await client.wait_for_notification("textDocument/publishDiagnostics")
+    # Second notification is from saving the "bad" version
+    await client.wait_for_notification("textDocument/publishDiagnostics")
+    # TODO: I think we still need a custom notification that is sent from the server
+    # _after_ it has sent the diagnostic. This will guarantee ordering so that we
+    # don't need the sleep.
+    time.sleep(0.01)
 
     actual = client.diagnostics[uri][0]
 
@@ -48,7 +52,9 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
     client.notify_did_change(uri, good)
     client.notify_did_save(uri, good)
 
-    time.sleep(1)
+    await client.wait_for_notification("textDocument/publishDiagnostics")
+    # TODO: see similar note on sleep above
+    time.sleep(0.01)
 
     # Ensure that we remove any resolved diagnostics.
     assert len(client.diagnostics[uri]) == 0
