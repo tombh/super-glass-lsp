@@ -12,7 +12,7 @@ from pytest_lsp import make_test_client
 from src.lsp.custom import CUSTOM_SERVER_CONFIG_COMMAND
 
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
-SERVER_CMD = [sys.executable, "src/main.py"]
+SERVER_CMD = [sys.executable, "src/main.py", "--logfile", "lsp-server-test.log"]
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,7 @@ async def test_initialization():
                 "foobar": {
                     "lsp_feature": "diagnostic",
                     "language_id": "foo",
-                    "command": ["foo", "bar"],
+                    "command": "foo --bar",
                     "parsing": {
                         "formats": ["{msg} at line {line:d}, column {col:d}"],
                     },
@@ -45,6 +45,7 @@ async def test_initialization():
             CUSTOM_SERVER_CONFIG_COMMAND
         )
 
+        assert configuration["configs"]["markdownlint"]["language_id"] == "markdown"
         assert configuration["configs"]["foobar"]["language_id"] == "foo"
 
     finally:

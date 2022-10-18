@@ -1,0 +1,37 @@
+version: 2
+
+# TODO: Consider being able to specify the global defaults for each config
+
+defaults: &defaults
+  enabled: false
+
+configs:
+  markdownlint:
+    <<: *defaults
+    lsp_feature: diagnostic
+    language_id: markdown
+    command: markdownlint --stdin
+    parsing:
+      formats:
+        - "stdin:{line:d}:{col:d} {msg}"
+        - "stdin:{line:d} {msg}"
+        - "stdin {msg}"
+      line_offset: -1
+      col_offset: -1
+
+  jqlint:
+    <<: *defaults
+    lsp_feature: diagnostic
+    language_id: json
+    command: "jq ."
+    parsing:
+      formats:
+        - "{msg} at line {line:d}, column {col:d}"
+
+  fuzzybuffertokens:
+    <<: *defaults
+    lsp_feature: completion
+    language_id: markdown
+    # TODO: Include this in main docs:
+    #   `{cursor_line}` and `{cursor_row}` should also be available
+    command: "cat {file} | tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq"

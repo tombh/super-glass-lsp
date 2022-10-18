@@ -19,9 +19,7 @@ from pygls.lsp.types import (
 from . import dump
 
 from .custom import CUSTOM_SERVER_CONFIG_COMMAND
-from .custom import config as custom_config
-from .custom.features import Features as CustomFeatures
-from .server import CustomLanguageServer
+from .server import CustomLanguageServer, Config
 
 server = CustomLanguageServer()
 
@@ -105,7 +103,7 @@ async def did_change(params: DidChangeTextDocumentParams):
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didChange
     """
-    CustomFeatures.did_change(server, params)
+    server.custom.did_change(params)
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -137,7 +135,7 @@ async def did_open(params: DidOpenTextDocumentParams):
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen
     """
-    CustomFeatures.did_open(server, params)
+    server.custom.did_open(params)
 
 
 @server.feature(COMPLETION)
@@ -162,11 +160,13 @@ async def completions(params: CompletionParams) -> Optional[CompletionList]:
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
     """
-    return CustomFeatures.completion_request(server, params)
+    return server.custom.completion_request(params)
 
 
 @server.command(CUSTOM_SERVER_CONFIG_COMMAND)
-def show_configuration(*args) -> Optional[custom_config.InitializationOptions]:
+def show_configuration(
+    *args,
+) -> Optional[Config]:
     """
     Returns the server's configuration.
 

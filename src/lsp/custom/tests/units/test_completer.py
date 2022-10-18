@@ -3,8 +3,8 @@ import pytest  # noqa
 from pygls.lsp.types import Position
 
 from src.lsp.server import CustomLanguageServer
-from src.lsp.custom.completer import Completer
-from src.lsp.custom.config import CLIToolConfig
+from src.lsp.custom.features.completer import Completer
+from src.lsp.custom.config_definitions import CLIToolConfig
 
 
 # TODO: e2e test this:
@@ -22,10 +22,12 @@ def test_completer(mocker):
         ]
     )
     mocker.patch(
-        "src.lsp.custom.completer.Completer.run_cli_tool", return_value=cli_output
+        "src.lsp.custom.features.completer.Completer.run_cli_tool",
+        return_value=cli_output,
     )
     mocker.patch(
-        "src.lsp.custom.completer.Completer.get_word_under_cursor", return_value="fo"
+        "src.lsp.custom.features.completer.Completer.get_word_under_cursor",
+        return_value="fo",
     )
 
     server = CustomLanguageServer()
@@ -34,7 +36,7 @@ def test_completer(mocker):
     config_from_client = {
         "lsp_feature": "completion",
         "language_id": "testing",
-        "command": [""],
+        "command": "",
         "parsing": {
             "formats": [
                 # `{detail}` should also be available

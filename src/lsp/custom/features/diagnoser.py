@@ -1,9 +1,7 @@
-from typing import List, Optional, TYPE_CHECKING
+import typing
+from typing import List, Optional, Dict
 
 import logging
-
-if TYPE_CHECKING:
-    from src.lsp.server import CustomLanguageServer
 
 import subprocess
 
@@ -14,16 +12,15 @@ from pygls.lsp.types import (
     Range,
 )
 
-from .config import CLIToolConfig, OutputParsingConfig, LSPFeature
+from src.lsp.custom.config_definitions import (
+    CLIToolConfig,
+    OutputParsingConfig,
+    LSPFeature,
+)
+from . import Feature
 
 
-class Diagnoser:
-    def __init__(self, server: "CustomLanguageServer"):
-        self.server = server
-
-        # TODO: use the name of the CLI tool
-        self.name = type(server).__name__
-
+class Diagnoser(Feature):
     # TODO: test as e2e
     def run(self, uri: str) -> None:
         if self.server.configuration is None:
@@ -31,7 +28,7 @@ class Diagnoser:
 
         document = self.server.workspace.get_document(uri)
 
-        configs = self.server.configuration.get_all_by(
+        configs = self.server.custom.get_all_config_by(
             LSPFeature.diagnostic, document.language_id
         )
         for _id, config in configs.items():
@@ -51,9 +48,16 @@ class Diagnoser:
             source=self.name,
         )
 
-    def parse_line(self, config: OutputParsingConfig, line: str) -> Diagnostic:
+    def parse_line(
+        self, maybe_config: Optional[OutputParsingConfig], line: str
+    ) -> Diagnostic:
+        if maybe_config is not None:
+            config = maybe_config
+        else:
+            config = OutputParsingConfig(**typing.cast(Dict, {"formats": ["{line}"]}))
+
         for format_string in config.formats:
-            maybe_diagnostic = self.parse_line_maybe(config, format_string, line)
+            maybe_diagnostic = self.parse_line_maybe(config, format_string, line)  # type: ignore
             if maybe_diagnostic is not None:
                 return maybe_diagnostic
 
@@ -96,9 +100,10 @@ class Diagnoser:
 
         return self.build_diagnostic_object(message, line_number, col_number)
 
-    def run_cli_tool(self, command: List[str], text: str) -> str:
+    # TODO: refactor with Completer.run_cli_tool.run_cli_tool
+    def run_cli_tool(self, command: str, text: str) -> str:
         result = subprocess.run(
-            command,
+            ["sh", "-c", command],
             input=text,
             text=True,
             capture_output=True,

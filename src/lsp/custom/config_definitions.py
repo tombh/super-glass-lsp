@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from enum import Enum, auto
 
 from pydantic import BaseModel, Field
@@ -42,10 +42,10 @@ class LSPFeature(AutoName):
     formatter = auto()
 
 
-class CLIToolConfig(BaseModel):
-    """Configuration options for the server."""
+class CLIToolConfigBasic(BaseModel):
+    """Absolute minimum config that the LSP server can recieve from the client"""
 
-    enabled: bool = Field(True)
+    enabled: Optional[bool] = Field(True)
     """
     Simply whether this config is used or not.
 
@@ -53,27 +53,31 @@ class CLIToolConfig(BaseModel):
     user can enable the config simply by overriding this one field.
     """
 
+
+class CLIToolConfig(CLIToolConfigBasic):
+    """The formal definition of a CLI Tool"""
+
     lsp_feature: LSPFeature = Field()
     """Specifies which feature of LSP this is configuring"""
 
-    language_id: str = Field()
+    language_id: Optional[str] = Field("*")
     """
     The language to which will trigger this CLI tool behaviour.
     Must be a `language_id` recognised by LSP, eg; `json`, `python`, etc
     """
 
-    command: List[str] = Field()
+    command: str = Field()
     """
-    The command to run, eg; `["jsonlint", "--strict"]`
+    The command to run, eg; `"jsonlint --strict"`
     """
 
-    parsing: OutputParsingConfig = Field(default_factory=OutputParsingConfig.default)
+    parsing: Optional[OutputParsingConfig] = Field(
+        default_factory=OutputParsingConfig.default
+    )
     """Config for the output of CLI tools"""
 
 
-class InitializationOptions(BaseModel):
-    """The initialization options we can expect to receive from a client."""
-
+class CLIToolConfigs:
     configs: Dict[str, CLIToolConfig] = Field()
     """
     Parent field for all CLI tool configs.
@@ -81,12 +85,13 @@ class InitializationOptions(BaseModel):
     all other manner of strange and wonderful CLI tools.
     """
 
-    def get_all_by(
-        self, feature: LSPFeature, language: Optional[str]
-    ) -> Dict[str, CLIToolConfig]:
-        def criteria(_id: str, config: CLIToolConfig):
-            is_feature = config.lsp_feature == feature
-            is_language = config.language_id == language
-            return config.enabled and is_feature and is_language
 
-        return {k: v for k, v in self.configs.items() if criteria(k, v)}
+class InitializationOptions(BaseModel):
+    """The initialization options we can expect to receive from a client."""
+
+    configs: Dict[str, Union[CLIToolConfig, CLIToolConfigBasic]] = Field()
+    """
+    Parent field for all CLI tool configs.
+    This is the entire collection of CLI tools, from linters, formatters, and
+    all other manner of strange and wonderful CLI tools.
+    """
