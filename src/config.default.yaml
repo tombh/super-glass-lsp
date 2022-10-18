@@ -1,7 +1,5 @@
 version: 2
 
-# TODO: Consider being able to specify the global defaults for each config
-
 defaults: &defaults
   enabled: false
 

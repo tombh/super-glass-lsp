@@ -18,7 +18,7 @@ Because the heavy-lifting of this language server is done by external tooling (t
 ## Usage
 
 ### Quickstart
-Once you've installed the language server and [set it up in your editor](#Editor Setups), it should be as easy as this to add new features:
+Once you've installed the language server and [set it up in your editor](https://github.com/tombh/cli-tools-lsp#editor-setups), it should be as easy as this to add new features (this is YAML, but your editor likely has its own config format):
 ```yaml
 # This is jsut an ID, so can be anything. Internally it's important so that you can
 # override existing configs (either the bundled defaults, or configs you have
@@ -48,33 +48,106 @@ fuzzy_similar_words_completion:
   command: "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq"
 ```
 
+### Configuration
+
+The server comes with a lot of defaults, see [config.default.yaml](src/config.default.yaml). To enable a particular tool simple provide the `enabled: true` field for that tool. For example:
+```yaml
+# This is YAML, but should be whatever format your editor's config is
+initialization_options:
+  configs:
+    jqlint:
+      enabled: true
+```
+
+TODO:
+* [ ] Explain all the fields and tokens for each LSP feature
+
 ## Editor Setups
 
-### Example Neovim Lua config
+Because this is a generic language server, the filetype/language that the server applies varies depending on the config you've setup. It would be a bad idea for a generic language server to tell an editor that it wants to connect with every possible filetype/language (although this can be enabled on a per tool basis with the `language_ids: ["*"]` setting). Instead it is better that you manually inform your editor which filetypes/languages this generic server should be enabled for. How that is done is unique to each editor's config, I've tried to include examples for each one.
 
-Since this project is very beta, we're not yet submitting this language server to the LSP Config plugin (the defacto way to add new language servers). Therefore, for now, we have to use Neovim's vanilla LSP setup (which has actually simplified a lot recently).
+<details>
+<summary>Neovim Lua (vanilla Neovim without `lspconfig`)</summary>
 
-```lua
-vim.api.nvim_create_autocmd({ "BufEnter" }, {
-  -- NB: You must remember to manually put the file extension pattern matchers for each LSP filetype
-  pattern = { "*" },
-  callback = function()
-    vim.lsp.start({
-      name = "clitools",
-      cmd = { "cli-tools-lsp" },
-      root_dir = vim.fs.dirname(vim.fs.find({ ".git" }, { upward = true })[1]),
-      init_options = {
-        configs = {
-          fuzzybuffertokens = {
-            lsp_feature = "completion",
-            command = "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
-          },
-        }
-      },
-    })
-  end,
-})
-```
+  Since this project is very beta, we're not yet submitting this language server to the LSP Config plugin (the defacto way to add new language servers). Therefore, for now, we have to use Neovim's vanilla LSP setup (which has actually simplified a lot recently).
+
+  ```lua
+  vim.api.nvim_create_autocmd({ "BufEnter" }, {
+    -- NB: You must remember to manually put the file extension pattern matchers for each LSP filetype
+    pattern = { "*" },
+    callback = function()
+      vim.lsp.start({
+        name = "clitools",
+        cmd = { "cli-tools-lsp" },
+        root_dir = vim.fs.dirname(vim.fs.find({ ".git" }, { upward = true })[1]),
+        init_options = {
+          configs = {
+            fuzzybuffertokens = {
+              lsp_feature = "completion",
+              command = "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
+            },
+          }
+        },
+      })
+    end,
+  })
+  ```
+</details>
+
+<details>
+<summary>Vim (`vim-lsp`) TBC</summary>
+
+  ```vim
+  augroup LspCLITools
+  au!
+  autocmd User lsp_setup call lsp#register_server({
+      \ 'name': 'cli-tools-lsp',
+      \ 'cmd': {server_info->['cli-tools-lsp', '--logfile', 'path/to-logfile']},
+      \ 'allowlist': ['vim', 'eruby', 'markdown', 'yaml'],
+      \ 'initialization_options': { "configs":
+      \   { "fuzzybuffertokens": {
+      \       "lsp_feature": "completion",
+      \       "command": "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
+      \     }
+      \   }
+      \ }})
+  augroup END
+  ```
+</details>
+
+<details>
+<summary>Neovim (`lspconfig`) TBC</summary>
+
+  Once we're stable, we'll submit ourselves for inclusion.
+</details>
+
+<details>
+<summary>Emacs (`lsp-mode`)</summary>
+
+
+  ```
+  (make-lsp-client :new-connection
+  (lsp-stdio-connection
+    `(,(executable-find "cli-lsp-tools") "--logfile" "path/to/logs"))
+    :activation-fn (lsp-activate-on "json")
+    :initialization-options ; TODO: I'm not an Emacs user, how do we provide these options?
+    :server-id 'cli-tools-lsp')))
+  ```
+</details>
+
+<details>
+<summary>Emacs (`eglot`) TBC</summary>
+  
+  Once we're stable, we'll submit ourselves for inclusion.
+</details>
+
+<details>
+<summary>VSCode TBC</summary>
+  
+  Can we copy EFM's VSCode extension?
+  https://github.com/Matts966/efm-langserver-vscode
+</details>
+
 
 ## Testing
 
