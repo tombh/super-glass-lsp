@@ -7,13 +7,6 @@ from src.lsp.custom.features.completer import Completer
 from src.lsp.custom.config_definitions import CLIToolConfig
 
 
-# TODO: e2e test this:
-# ... "command": [
-#     "bash",
-#     "-c",
-#     # `{cursor_line}` and `{cursor_row}` should also be available
-#     "cat {file} | tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
-# ]
 def test_completer(mocker):
     cli_output = "\n".join(
         [
@@ -37,18 +30,10 @@ def test_completer(mocker):
         "lsp_feature": "completion",
         "language_id": "testing",
         "command": "",
-        "parsing": {
-            "formats": [
-                # `{detail}` should also be available
-                "{item}",
-            ]
-        },
     }
-    config = CLIToolConfig(**config_from_client)
+    completer.config = CLIToolConfig(**config_from_client)
 
-    completions = completer.complete(
-        config, "path/to/file", Position(line=0, character=0)
-    )
+    completions = completer.complete("path/to/file", Position(line=0, character=0))
 
     assert len(completions) == 2
 

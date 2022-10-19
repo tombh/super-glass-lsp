@@ -1,7 +1,5 @@
 from typing import List, Optional
 
-import subprocess
-
 from pygls.lsp.types import (
     Position,
 )
@@ -11,7 +9,7 @@ from pygls.lsp import (
     CompletionList,
 )
 
-from src.lsp.custom.config_definitions import CLIToolConfig, LSPFeature
+from src.lsp.custom.config_definitions import LSPFeature
 from . import Feature
 
 
@@ -27,7 +25,8 @@ class Completer(Feature):
         )
         completions = []
         for _id, config in configs.items():
-            items = self.complete(config, uri, cursor_position)
+            self.config = config
+            items = self.complete(uri, cursor_position)
             completions.extend(items)
 
         return CompletionList(
@@ -36,11 +35,16 @@ class Completer(Feature):
         )
 
     def complete(
-        self, config: CLIToolConfig, text_doc_uri: str, cursor_position: Position
+        self, text_doc_uri: str, cursor_position: Position
     ) -> List[CompletionItem]:
+        if self.config is None:
+            return []
+
         word = self.get_word_under_cursor(text_doc_uri, cursor_position)
 
-        output = self.run_cli_tool(config.command, text_doc_uri, word, cursor_position)
+        output = self.run_cli_tool(
+            self.config.command, text_doc_uri, word, cursor_position
+        )
         items = []
         for line in output.splitlines():
             item = CompletionItem(label=line)
@@ -48,7 +52,6 @@ class Completer(Feature):
 
         return items
 
-    # TODO: refactor with Diagnoser.run_cli_tool
     def run_cli_tool(
         self,
         command: str,
@@ -61,18 +64,9 @@ class Completer(Feature):
         command = command.replace("{word}", word)
         command = command.replace("{cursor_line}", str(cursor_position.line))
         command = command.replace("{cursor_char}", str(cursor_position.character))
-
         self.server.logger.debug(f"command: {command}")
 
-        result = subprocess.run(
-            ["sh", "-c", command],
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-
-        # TODO: check for failure
-
+        result = self.shell(command)
         return result.stdout.strip()
 
     def get_word_under_cursor(self, uri: str, cursor_position: Position):

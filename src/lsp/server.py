@@ -6,7 +6,7 @@ import logging
 from pygls.lsp.types import (
     InitializeParams,
 )
-from pygls import server
+from pygls import server as pygls_server
 
 from .custom.hub import Hub as CustomFeatures
 from .custom.config_definitions import (
@@ -19,7 +19,7 @@ from .custom.config_definitions import (
 Config = Optional[Union[CustomInitializationOptions, CustomConfig]]
 
 
-class CustomLanguageServer(server.LanguageServer):
+class CustomLanguageServer(pygls_server.LanguageServer):
     """
     Pygls' ``LanguageServer`` is the base class from which we can build our own custom
     language server.

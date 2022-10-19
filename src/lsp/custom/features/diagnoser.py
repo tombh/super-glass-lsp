@@ -3,8 +3,6 @@ from typing import List, Optional, Dict
 
 import logging
 
-import subprocess
-
 from parse import parse  # type: ignore
 from pygls.lsp.types import (
     Diagnostic,
@@ -17,23 +15,24 @@ from src.lsp.custom.config_definitions import (
     OutputParsingConfig,
     LSPFeature,
 )
-from . import Feature
+from src.lsp.custom.features import Feature
 
 
 class Diagnoser(Feature):
     # TODO: test as e2e
-    def run(self, uri: str) -> None:
+    def run(self, text_doc_uri: str) -> None:
         if self.server.configuration is None:
             return
 
-        document = self.server.workspace.get_document(uri)
+        document = self.server.workspace.get_document(text_doc_uri)
 
         configs = self.server.custom.get_all_config_by(
             LSPFeature.diagnostic, document.language_id
         )
         for _id, config in configs.items():
+            self.config = config
             if document.language_id == config.language_id:
-                diagnostics = self.diagnose(document.source, config)
+                diagnostics = self.diagnose(text_doc_uri, config)
                 self.server.publish_diagnostics(document.uri, diagnostics)
 
     def build_diagnostic_object(
@@ -100,22 +99,25 @@ class Diagnoser(Feature):
 
         return self.build_diagnostic_object(message, line_number, col_number)
 
-    # TODO: refactor with Completer.run_cli_tool.run_cli_tool
-    def run_cli_tool(self, command: str, text: str) -> str:
-        result = subprocess.run(
-            ["sh", "-c", command],
-            input=text,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+    def run_cli_tool(self, command: str, text_doc_uri: str) -> str:
+        extra_args = {
+            # TODO: I think it'll be better to allow configs to dictate which of STDOUT/STDERR
+            # will contain the parseable output
+            "capture_output": True,
+            # Rather confusingly, some linters successfully show their diagnostics but exit
+            # with a non-zero exit code.
+            "check": False,
+        }
+        result = self.shell(command, text_doc_uri, extra_args)
+
+        # TODO: Grep for at least "command not found"
 
         return result.stderr.strip()
 
-    def diagnose(self, text: str, config: CLIToolConfig) -> List[Diagnostic]:
+    def diagnose(self, text_doc_uri: str, config: CLIToolConfig) -> List[Diagnostic]:
         diagnostics: List[Diagnostic] = []
 
-        output = self.run_cli_tool(config.command, text)
+        output = self.run_cli_tool(config.command, text_doc_uri)
         if not output:
             return diagnostics
 

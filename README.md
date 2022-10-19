@@ -27,7 +27,7 @@ fuzzy_similar_words_completion:
 
   # This is the part of the language server to which the `command` will apply.
   # The other currently supported features are: `diagnostic`.
-  lsp_feature: completion,
+  lsp_feature: completion
   
   # This is the external command which will be triggered and parsed for every
   # invocation of the feature. In the case of completions, editors will generally
@@ -50,7 +50,7 @@ fuzzy_similar_words_completion:
 
 ### Configuration
 
-The server comes with a lot of defaults, see [config.default.yaml](src/config.default.yaml). To enable a particular tool simple provide the `enabled: true` field for that tool. For example:
+The server comes with a lot of [defaults](src/config.default.yaml). To enable a particular tool simple provide the `enabled: true` field for that tool. For example:
 ```yaml
 # This is YAML, but should be whatever format your editor's config is
 initialization_options:
@@ -64,7 +64,7 @@ TODO:
 
 ## Editor Setups
 
-Because this is a generic language server, the filetype/language that the server applies varies depending on the config you've setup. It would be a bad idea for a generic language server to tell an editor that it wants to connect with every possible filetype/language (although this can be enabled on a per tool basis with the `language_ids: ["*"]` setting). Instead it is better that you manually inform your editor which filetypes/languages this generic server should be enabled for. How that is done is unique to each editor's config, I've tried to include examples for each one.
+Because this is a generic language server, the filetype/language that the server applies to varies depending on the config you've setup. It would be a bad idea for a generic language server to tell an editor that it wants to connect with every possible filetype/language (although this can be enabled on a per tool basis with the `language_ids: ["*"]` setting). Instead, it is better that you manually inform your editor which filetypes/languages this generic server should be enabled for. How that is done is unique to each editor's config, I've tried to include examples for each one.
 
 <details>
 <summary>Neovim Lua (vanilla Neovim without `lspconfig`)</summary>
@@ -95,7 +95,7 @@ Because this is a generic language server, the filetype/language that the server
 </details>
 
 <details>
-<summary>Vim (`vim-lsp`) TBC</summary>
+<summary>Vim (`vim-lsp`)</summary>
 
   ```vim
   augroup LspCLITools

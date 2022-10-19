@@ -8,10 +8,11 @@ from pygls.lsp.types import Diagnostic
 from pygls.lsp.types import Position
 from pygls.lsp.types import Range
 
-from . import config_test_needs
+from . import default_config_test
 
 
-@config_test_needs("jqlint", "jq", "sample.json")
+# TODO: all these tests need to have a timeout
+@default_config_test("jqlint", "jq", "sample.json")
 async def test_jq_linter(client: Client, file_path: str, uri: str):
     file = open(file_path, "r")
     good = file.read()

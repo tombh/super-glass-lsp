@@ -71,6 +71,16 @@ class CLIToolConfig(CLIToolConfigBasic):
     The command to run, eg; `"jsonlint --strict"`
     """
 
+    piped: bool = Field(True)
+    """
+    Whether to pipe the current text document into the command's STDIN
+    """
+
+    timeout: int = Field(3)
+    """
+    How long to let the subprocess run before killing it
+    """
+
     parsing: Optional[OutputParsingConfig] = Field(
         default_factory=OutputParsingConfig.default
     )
