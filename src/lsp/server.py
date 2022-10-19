@@ -45,6 +45,28 @@ class CustomLanguageServer(pygls_server.LanguageServer):
         separate for educational purposes.
         """
 
+    def add_feature(self, feature: str):
+        """
+        This is a wrapper just to catch and handle all unexpected errors in one place.
+
+        TODO:
+        Is this even useful? I wonder if this should be formally supported in Pygls itself?
+        """
+
+        def wrapper(func):
+            @self.feature(feature)
+            async def inner(*args, **kwargs):
+                try:
+                    await func(*args, **kwargs)
+                except Exception as e:
+                    self.logger.error(e)
+                    # TODO: should this have the name of the custom LSP server?
+                    self.show_message(f"Unexpected error in LSP server: {e}")
+
+            return inner
+
+        return wrapper
+
     def initialize(self, params: InitializeParams):
         """
         This should be the very first request from the client/editor. It contains the

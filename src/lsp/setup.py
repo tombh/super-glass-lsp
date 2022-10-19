@@ -24,7 +24,7 @@ from .server import CustomLanguageServer, Config
 server = CustomLanguageServer()
 
 
-@server.feature(INITIALIZE)
+@server.add_feature(INITIALIZE)
 def on_initialize(params: InitializeParams):
     """
     The initialize request is sent as the first request from the client to the server.
@@ -80,7 +80,7 @@ def on_initialize(params: InitializeParams):
     server.initialize(params)
 
 
-@server.feature(TEXT_DOCUMENT_DID_CHANGE)
+@server.add_feature(TEXT_DOCUMENT_DID_CHANGE)
 async def did_change(params: DidChangeTextDocumentParams):
     """
     The document change notification is sent from the client to the server to signal
@@ -106,7 +106,7 @@ async def did_change(params: DidChangeTextDocumentParams):
     server.custom.did_change(params)
 
 
-@server.feature(TEXT_DOCUMENT_DID_OPEN)
+@server.add_feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(params: DidOpenTextDocumentParams):
     """
     The document open notification is sent from the client to the server to signal
@@ -138,7 +138,7 @@ async def did_open(params: DidOpenTextDocumentParams):
     server.custom.did_open(params)
 
 
-@server.feature(COMPLETION)
+@server.add_feature(COMPLETION)
 async def completions(params: CompletionParams) -> Optional[CompletionList]:
     """
     The Completion request is sent from the client to the server to compute completion
