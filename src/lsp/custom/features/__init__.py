@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from src.lsp.server import CustomLanguageServer
 
 import subprocess
+
 from src.lsp.custom.config_definitions import CLIToolConfig
 
 SubprocessArgs = Dict[str, Any]

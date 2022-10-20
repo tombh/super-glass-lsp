@@ -17,6 +17,11 @@ from .custom.config_definitions import (
 )
 
 Config = Optional[Union[CustomInitializationOptions, CustomConfig]]
+"""
+Illustrative that although initialization options and general config might be structurally similar,
+you may have differing requirements for adherence. Eg, init options from the client may be sparse
+and the general server config fills in the gaps with defaults.
+"""
 
 
 class CustomLanguageServer(pygls_server.LanguageServer):
