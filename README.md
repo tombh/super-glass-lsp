@@ -82,7 +82,7 @@ Because this is a generic language server, the filetype/language that the server
         root_dir = vim.fs.dirname(vim.fs.find({ ".git" }, { upward = true })[1]),
         init_options = {
           configs = {
-            fuzzybuffertokens = {
+            fuzzy_buffer_tokens = {
               lsp_feature = "completion",
               command = "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
             },
@@ -105,7 +105,7 @@ Because this is a generic language server, the filetype/language that the server
       \ 'cmd': {server_info->['cli-tools-lsp', '--logfile', 'path/to-logfile']},
       \ 'allowlist': ['vim', 'eruby', 'markdown', 'yaml'],
       \ 'initialization_options': { "configs":
-      \   { "fuzzybuffertokens": {
+      \   { "fuzzy_buffer_tokens": {
       \       "lsp_feature": "completion",
       \       "command": "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq",
       \     }

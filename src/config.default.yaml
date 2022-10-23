@@ -26,10 +26,10 @@ configs:
       formats:
         - "{msg} at line {line:d}, column {col:d}"
 
-  fuzzybuffertokens:
+  fuzzy_buffer_tokens:
     <<: *defaults
     lsp_feature: completion
     language_id: markdown
     # TODO: Include this in main docs:
     #   `{cursor_line}` and `{cursor_row}` should also be available
-    command: "cat {file} | tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq"
+    command: "tr -cs '[:alnum:]' '\n' | fzf --filter='{word}' | uniq"

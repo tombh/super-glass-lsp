@@ -101,9 +101,6 @@ class Diagnoser(Feature):
 
     def run_cli_tool(self, command: str, text_doc_uri: str) -> str:
         extra_args = {
-            # TODO: I think it'll be better to allow configs to dictate which of STDOUT/STDERR
-            # will contain the parseable output
-            "capture_output": True,
             # Rather confusingly, some linters successfully show their diagnostics but exit
             # with a non-zero exit code.
             "check": False,
@@ -112,6 +109,8 @@ class Diagnoser(Feature):
 
         # TODO: Grep for at least "command not found"
 
+        # TODO: I think it'll be better to allow configs to dictate which of STDOUT/STDERR
+        # will contain the parseable output
         return result.stderr.strip()
 
     def diagnose(self, text_doc_uri: str, config: CLIToolConfig) -> List[Diagnostic]:

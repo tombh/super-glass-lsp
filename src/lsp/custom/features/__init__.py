@@ -32,6 +32,8 @@ class Feature:
 
         subprocess_args: SubprocessArgs = {
             "timeout": self.config.timeout,
+            "capture_output": True,
+            "check": True,
             # Pipe to STDIN
             "text": True,
         }
@@ -40,6 +42,14 @@ class Feature:
         if self.config is not None and self.config.piped and text_doc_uri is not None:
             document = self.server.workspace.get_document(text_doc_uri)
             subprocess_args["input"] = document.source
+
+        self.server.logger.debug(
+            {
+                "text_doc_uri": text_doc_uri,
+                "tool_config": self.config,
+                "shell_config": subprocess_args,
+            }
+        )
 
         try:
             result = subprocess.run(["sh", "-c", command], **subprocess_args)
@@ -50,4 +60,8 @@ class Feature:
             self.server.logger.warning(message)
             self.server.show_message(message)
             result = subprocess.CompletedProcess("", returncode=1)
+        except subprocess.CalledProcessError:
+            message = f"Shell error for `{command}`: {result.stdout}"
+            self.server.logger.error(message)
+            self.server.show_message(message)
         return result

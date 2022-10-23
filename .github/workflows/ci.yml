@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Install external tool dependencies
         run: |
-          sudo apt-get install jq
+          sudo apt-get install jq fzf
           npm install markdownlint
       - uses: actions/checkout@v2.3.4
       - name: Set up Python ${{ matrix.python-version }}

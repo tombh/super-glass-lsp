@@ -3,9 +3,7 @@ from typing import Dict, Optional, Union
 
 import logging
 
-from pygls.lsp.types import (
-    InitializeParams,
-)
+from pygls.lsp.types import InitializeParams
 from pygls import server as pygls_server
 
 from .custom.hub import Hub as CustomFeatures
@@ -50,6 +48,7 @@ class CustomLanguageServer(pygls_server.LanguageServer):
         separate for educational purposes.
         """
 
+    # TODO: Remove and put into `JsonRPCProtocol._handle_notification()`. See issue #227
     def add_feature(self, feature: str):
         """
         This is a wrapper just to catch and handle all unexpected errors in one place.

@@ -56,11 +56,10 @@ def default_config_test(id: str, executable: str, extension: str):
             cs = lsp_client_server_for(id)
             await cs.start()
             sample_file_path_full = ROOT_PATH / sample_file_path
-            open(sample_file_path_full, "w")
-            config = Hub.load_default_config()
-            language_id = config["configs"][id]["language_id"]
             sample_uri = uri.from_fs_path(str(sample_file_path_full))
             sample_file = open(sample_file_path_full)
+            config = Hub.load_default_config()
+            language_id = config["configs"][id]["language_id"]
             cs.client.notify_did_open(sample_uri, language_id, sample_file.read())
 
             try:

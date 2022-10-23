@@ -10,7 +10,7 @@ from pygls.lsp import (
 )
 
 from src.lsp.custom.config_definitions import LSPFeature
-from . import Feature
+from src.lsp.custom.features import Feature
 
 
 class Completer(Feature):
@@ -64,9 +64,8 @@ class Completer(Feature):
         command = command.replace("{word}", word)
         command = command.replace("{cursor_line}", str(cursor_position.line))
         command = command.replace("{cursor_char}", str(cursor_position.character))
-        self.server.logger.debug(f"command: {command}")
 
-        result = self.shell(command)
+        result = self.shell(command, text_doc_uri)
         return result.stdout.strip()
 
     def get_word_under_cursor(self, uri: str, cursor_position: Position):
