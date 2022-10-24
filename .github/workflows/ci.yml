@@ -37,7 +37,7 @@ jobs:
       - name: Install external tool dependencies
         run: |
           sudo apt-get install jq fzf
-          npm install markdownlint
+          npm install --global markdownlint
       - uses: actions/checkout@v2.3.4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -50,5 +50,5 @@ jobs:
       - name: Install project dependencies
         run: poetry install
       - name: Run tests
-        run: poetry run python -m pytest
+        run: poetry -vvv run python -m pytest --log-cli-level=DEBUG 
 

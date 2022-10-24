@@ -12,6 +12,8 @@ from pytest_lsp import make_test_client
 
 from src.lsp.custom.hub import Hub
 
+TEST_TIMEOUT = 3
+
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
 SERVER_CMD = [sys.executable, "src/main.py", "--logfile", "./lsp-server-test.log"]
 
@@ -36,6 +38,10 @@ def lsp_client_server_for(id: str):
     return cs
 
 
+def create_file(path: str):
+    open(path, "w")
+
+
 # TODO: handle multiple executbales?
 def default_config_test(id: str, executable: str, extension: str):
     """
@@ -50,19 +56,21 @@ def default_config_test(id: str, executable: str, extension: str):
     def wrapper(func):
         reason = f"`{executable}` executable not found"
 
+        @pytest.mark.timeout(TEST_TIMEOUT)
         @pytest.mark.skipif(not shutil.which(executable), reason=reason)
         @pytest.mark.asyncio
         async def inner(*args, **kwargs):
             cs = lsp_client_server_for(id)
             await cs.start()
-            sample_file_path_full = ROOT_PATH / sample_file_path
-            sample_uri = uri.from_fs_path(str(sample_file_path_full))
-            sample_file = open(sample_file_path_full)
-            config = Hub.load_default_config()
-            language_id = config["configs"][id]["language_id"]
-            cs.client.notify_did_open(sample_uri, language_id, sample_file.read())
-
             try:
+                sample_file_path_full = ROOT_PATH / sample_file_path
+                sample_uri = uri.from_fs_path(str(sample_file_path_full))
+                create_file(sample_file_path_full)
+                sample_file = open(sample_file_path_full)
+                config = Hub.load_default_config()
+                language_id = config["configs"][id]["language_id"]
+                cs.client.notify_did_open(sample_uri, language_id, sample_file.read())
+
                 await func(
                     cs.client, sample_file_path_full, sample_uri, *args, **kwargs
                 )

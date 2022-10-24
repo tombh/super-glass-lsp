@@ -22,6 +22,7 @@ black = "^22.8.0"
 pytest-mock = "^3.10.0"
 pytest-lsp = "^0.1.2"
 types-pyyaml = "^6.0.12"
+pytest-timeout = "^2.1.0"
 
 [tool.poetry.scripts]
 cli-tools-lsp = "src.main:main"
