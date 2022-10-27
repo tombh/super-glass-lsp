@@ -45,7 +45,23 @@ class LSPFeature(AutoName):
 class CLIToolConfigBasic(BaseModel):
     """Absolute minimum config that the LSP server can recieve from the client"""
 
-    enabled: Optional[bool] = Field(True)
+    # TODO: I do not like this repetition. But we're going to be replacing Pydantic in
+    # Pygls v1 anyway, so punting this for another day.
+    enabled: bool = Field()
+    lsp_feature: Optional[LSPFeature] = Field()
+    language_id: Optional[str] = Field()
+    command: Optional[str] = Field()
+    piped: Optional[bool] = Field()
+    stdout: Optional[bool] = Field()
+    stderr: Optional[bool] = Field()
+    timeout: Optional[int] = Field()
+    parsing: Optional[OutputParsingConfig] = Field()
+
+
+class CLIToolConfig(CLIToolConfigBasic):
+    """The formal definition of a CLI Tool"""
+
+    enabled: bool = Field(True)
     """
     Simply whether this config is used or not.
 
@@ -53,20 +69,16 @@ class CLIToolConfigBasic(BaseModel):
     user can enable the config simply by overriding this one field.
     """
 
-
-class CLIToolConfig(CLIToolConfigBasic):
-    """The formal definition of a CLI Tool"""
-
     lsp_feature: LSPFeature = Field()
     """Specifies which feature of LSP this is configuring"""
 
-    language_id: Optional[str] = Field("*")
+    language_id: str = Field("*")
     """
     The language to which will trigger this CLI tool behaviour.
     Must be a `language_id` recognised by LSP, eg; `json`, `python`, etc
     """
 
-    command: str = Field()
+    command: str = Field("true")
     """
     The command to run, eg; `"jsonlint --strict"`
     """
@@ -74,6 +86,16 @@ class CLIToolConfig(CLIToolConfigBasic):
     piped: bool = Field(True)
     """
     Whether to pipe the current text document into the command's STDIN
+    """
+
+    stdout: Optional[bool] = Field()
+    """
+    Force checking of output on STDOUT
+    """
+
+    stderr: Optional[bool] = Field()
+    """
+    Force checking of output on STDERR
     """
 
     timeout: int = Field(3)

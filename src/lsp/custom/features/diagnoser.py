@@ -1,14 +1,8 @@
 import typing
 from typing import List, Optional, Dict
 
-import logging
-
 from parse import parse  # type: ignore
-from pygls.lsp.types import (
-    Diagnostic,
-    Position,
-    Range,
-)
+from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity
 
 from src.lsp.custom.config_definitions import (
     CLIToolConfig,
@@ -36,7 +30,7 @@ class Diagnoser(Feature):
                 self.server.publish_diagnostics(document.uri, diagnostics)
 
     def build_diagnostic_object(
-        self, message: str, line: int = 0, col: int = 0
+        self, message: str, line: int = 0, col: int = 0, severity: str = ""
     ) -> Diagnostic:
         return Diagnostic(
             range=Range(
@@ -45,7 +39,28 @@ class Diagnoser(Feature):
             ),
             message=message,
             source=self.name,
+            severity=self.match_severity(severity),
         )
+
+    def match_severity(self, severity_string: str) -> DiagnosticSeverity:
+        severity_string = severity_string.lower()
+        if "error" in severity_string:
+            return DiagnosticSeverity.Error
+        if "warning" in severity_string:
+            return DiagnosticSeverity.Warning
+        if "info" in severity_string:
+            return DiagnosticSeverity.Information
+        if "hint" in severity_string:
+            return DiagnosticSeverity.Hint
+        if "note" in severity_string:
+            return DiagnosticSeverity.Hint
+        if severity_string.startswith("e"):
+            return DiagnosticSeverity.Error
+        if severity_string.startswith("w"):
+            return DiagnosticSeverity.Warning
+        if severity_string.startswith("i"):
+            return DiagnosticSeverity.Information
+        return DiagnosticSeverity.Error
 
     def parse_line(
         self, maybe_config: Optional[OutputParsingConfig], line: str
@@ -62,15 +77,20 @@ class Diagnoser(Feature):
 
         # TODO: What's the proper way of communicating this?
         message = "CLI Tool LSP failed to parse CLI output"
+        self.server.logger.warning(f"{message}: {line}")
         return self.build_diagnostic_object(message)
 
     def parse_line_maybe(
         self, config: OutputParsingConfig, format_string: str, line: str
     ) -> Optional[Diagnostic]:
-        logging.debug(msg=f"Parsing: '{line}' with '{format_string}'")
+        self.server.logger.debug(msg=f"Parsing: '{line}' with '{format_string}'")
         parsed = parse(format_string, line)
         if parsed is None:
             return None
+
+        severity = "error"
+        if format_string.find("{severity}") != -1:
+            severity = parsed["severity"]
 
         line_offset = 0
         if config.line_offset is not None:
@@ -90,33 +110,40 @@ class Diagnoser(Feature):
 
         message = parsed["msg"]
 
-        logging.debug(msg=f"Parsed `line` as: {line_number}")
-        logging.debug(msg=f"Parsed `col` as: {col_number}")
-        logging.debug(msg=f"Parsed `msg` as: {message}")
+        self.server.logger.debug(msg=f"Parsed `line` as: {line_number}")
+        self.server.logger.debug(msg=f"Parsed `col` as: {col_number}")
+        self.server.logger.debug(msg=f"Parsed `msg` as: {message}")
+        self.server.logger.debug(msg=f"Parsed `severity` as: {severity}")
 
         line_number += line_offset
         col_number += col_offset
 
-        return self.build_diagnostic_object(message, line_number, col_number)
+        return self.build_diagnostic_object(message, line_number, col_number, severity)
 
-    def run_cli_tool(self, command: str, text_doc_uri: str) -> str:
+    def run_cli_tool(
+        self, command: str, text_doc_uri: str, use_stdout: Optional[bool] = False
+    ) -> str:
+        output = ""
         extra_args = {
             # Rather confusingly, some linters successfully show their diagnostics but exit
             # with a non-zero exit code.
+            # TODO: Grep for at least "command not found"
             "check": False,
         }
         result = self.shell(command, text_doc_uri, extra_args)
 
-        # TODO: Grep for at least "command not found"
+        if use_stdout and result.stdout is not None:
+            output = result.stdout.strip()
 
-        # TODO: I think it'll be better to allow configs to dictate which of STDOUT/STDERR
-        # will contain the parseable output
-        return result.stderr.strip()
+        if not use_stdout and result.stderr is not None:
+            output = result.stderr.strip()
+
+        return output
 
     def diagnose(self, text_doc_uri: str, config: CLIToolConfig) -> List[Diagnostic]:
         diagnostics: List[Diagnostic] = []
 
-        output = self.run_cli_tool(config.command, text_doc_uri)
+        output = self.run_cli_tool(config.command, text_doc_uri, config.stdout)
         if not output:
             return diagnostics
 

@@ -9,6 +9,7 @@ def test_config_merging():
     config_dict = {
         "configs": {
             "foobar": {
+                "enabled": True,
                 "lsp_feature": "diagnostic",
                 "language_id": "testing",
                 "command": "",
@@ -28,4 +29,4 @@ def test_config_merging():
 
     server.initialize(params)
 
-    assert len(server.config.configs) == 4
+    assert len(server.config.configs) > 3

@@ -30,11 +30,13 @@ class Feature:
         if self.config is None:
             raise Exception
 
+        if text_doc_uri is not None:
+            command = command.replace("{file}", text_doc_uri.replace("file://", ""))
+
         subprocess_args: SubprocessArgs = {
             "timeout": self.config.timeout,
-            "capture_output": True,
             "check": True,
-            # Pipe to STDIN
+            "capture_output": True,
             "text": True,
         }
         subprocess_args = {**subprocess_args, **extra_subprocess_args}
@@ -43,16 +45,18 @@ class Feature:
             document = self.server.workspace.get_document(text_doc_uri)
             subprocess_args["input"] = document.source
 
-        self.server.logger.debug(
-            {
-                "text_doc_uri": text_doc_uri,
-                "tool_config": self.config,
-                "shell_config": subprocess_args,
-            }
-        )
+        debug = {
+            "text_doc_uri": text_doc_uri,
+            "tool_config": self.config,
+            "shell_config": subprocess_args,
+        }
+        self.server.logger.debug(f"subprocess.run() config: {debug}")
 
         try:
+            self.server.logger.debug(f"subprocess.run() command: {command}")
             result = subprocess.run(["sh", "-c", command], **subprocess_args)
+            self.server.logger.debug(f"subprocess.run() STDOUT: {result.stdout}")
+            self.server.logger.debug(f"subprocess.run() STDERR: {result.stderr}")
         except subprocess.TimeoutExpired:
             message = (
                 f"Timeout: `{command}` took longer than {self.config.timeout} seconds"

@@ -26,8 +26,6 @@ def main() -> None:
     else:
         logging.basicConfig(level=logging.INFO)
 
-    logging.getLogger("pygls").setLevel(logging.WARNING)
-
     print("Starting CLI Tools LSP server on STDIO...")
     server.start_io()  # type: ignore
 

@@ -40,10 +40,12 @@ class Hub:
         self, feature: LSPFeature, language: Optional[str]
     ) -> Dict[str, CLIToolConfig]:
         if self.server.config is None:
+            self.server.logger.warning("`server.config` not set")
             return {}
 
         filtered_config: Dict[str, CLIToolConfig] = {}
         for id, config in self.server.config.configs.items():
+            self.server.logger.debug(f"Got config: {[id, config]}")
             # In order to fully use the type system it might be possible to do this with `TypeVar`
             # See: https://stackoverflow.com/a/66700544
             is_feature = config.lsp_feature == feature  # type: ignore
@@ -64,12 +66,21 @@ class Hub:
 
     def merge_config(self):
         default_config_raw = Hub.load_default_config()
+        user_configs = {}
 
-        config = merge({}, default_config_raw, self.server.config.dict())
+        for id, config in self.server.config.configs.items():
+            self.server.logger.debug(f"Removing `None`s from '{id}': {config}")
+            user_configs[id] = {k: v for k, v in config.dict().items() if v is not None}
+            self.server.logger.debug(f"Removed `None`s from '{id}': {config}")
 
+            # TODO: think about not allowing `lsp_feature` to be overriden?
+
+        final_config = merge({}, default_config_raw, {"configs": user_configs})
         self.server.config = config_definitions.InitializationOptions(
-            **typing.cast(Dict, config)
+            **typing.cast(Dict, final_config)
         )
+
+        self.server.logger.debug(f"Final merged config: {self.server.config}")
 
     def did_change(self, params: DidChangeTextDocumentParams):
         diagnoser = Diagnoser(self.server)

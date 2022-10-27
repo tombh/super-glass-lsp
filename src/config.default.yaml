@@ -26,6 +26,18 @@ configs:
       formats:
         - "{msg} at line {line:d}, column {col:d}"
 
+  mypy:
+    <<: *defaults
+    lsp_feature: diagnostic
+    language_id: python
+    command: "mypy --no-color-output --no-error-summary {file}"
+    piped: false
+    stdout: true
+    parsing:
+      formats:
+        - "{}:{line:d}: {severity}: {msg}"
+      line_offset: -1
+
   fuzzy_buffer_tokens:
     <<: *defaults
     lsp_feature: completion

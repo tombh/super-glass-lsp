@@ -7,11 +7,11 @@ from pytest_lsp.client import Client
 from pygls.lsp.types import Diagnostic
 from pygls.lsp.types import Position
 from pygls.lsp.types import Range
+from pygls.lsp.types import DiagnosticSeverity
 
 from . import default_config_test, wait_for_diagnostic_count
 
 
-# TODO: all these tests need to have a timeout
 @default_config_test("jqlint", "jq", "json")
 async def test_jq_linter(client: Client, file_path: str, uri: str):
     good = '{"foo": "bar"}'
@@ -20,7 +20,8 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
     # reporting the issue.
     bad = "{,}"
     file = open(file_path, "w")
-    file.write(bad)
+    with open(file_path, "w") as file:
+        file.write(bad)
 
     client.notify_did_change(uri, bad)
 
@@ -35,6 +36,7 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
             start=Position(line=1, character=2),
             end=Position(line=1, character=3),
         ),
+        severity=DiagnosticSeverity.Error,
     )
 
     file = open(file_path, "w")

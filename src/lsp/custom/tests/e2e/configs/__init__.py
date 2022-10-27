@@ -12,7 +12,7 @@ from pytest_lsp import make_test_client
 
 from src.lsp.custom.hub import Hub
 
-TEST_TIMEOUT = 3
+TEST_TIMEOUT = 5
 
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
 SERVER_CMD = [sys.executable, "src/main.py", "--logfile", "./lsp-server-test.log"]
@@ -39,7 +39,8 @@ def lsp_client_server_for(id: str):
 
 
 def create_file(path: str):
-    open(path, "w")
+    with open(path, "w") as file:
+        file.write("")
 
 
 # TODO: handle multiple executbales?
@@ -75,6 +76,7 @@ def default_config_test(id: str, executable: str, extension: str):
                     cs.client, sample_file_path_full, sample_uri, *args, **kwargs
                 )
             finally:
+                # TODO: needs to timeout _before_ pytest-timeout kills this function
                 await cs.stop()
 
         return inner
@@ -83,7 +85,7 @@ def default_config_test(id: str, executable: str, extension: str):
 
 
 async def wait_for_diagnostic_count(client: Client, uri: str, count: int):
-    timeout = 3
+    timeout = TEST_TIMEOUT - 1
     pause = 0.01
     accumulated = 0.0
     while True:

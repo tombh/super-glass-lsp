@@ -12,28 +12,32 @@ from pygls.lsp.types import DiagnosticSeverity
 from . import default_config_test, wait_for_diagnostic_count
 
 
-@default_config_test("markdownlint", "markdownlint", "md")
-async def test_markdownlint(client: Client, file_path: str, uri: str):
-    good = """# Markdown Title\n"""
+@default_config_test("mypy", "python", "py")
+async def test_mypy(client: Client, file_path: str, uri: str):
+    good = """a: int = 1"""
 
     # Change the file so that it's in the "bad" state, we should see a diagnostic
     # reporting the issue.
-    bad = "(bad link)[https://bad.com]"
+    bad = """a: int = 1\na = ''"""
     with open(file_path, "w") as file:
         file.write(bad)
 
     client.notify_did_change(uri, bad)
 
-    await wait_for_diagnostic_count(client, uri, 3)
+    await wait_for_diagnostic_count(client, uri, 1)
 
     actual = client.diagnostics[uri][0]
 
+    message = (
+        "Incompatible types in assignment (expression has "
+        'type "str", variable has type "int")'
+    )
     assert actual == Diagnostic(
         source="CustomLanguageServer",
-        message="MD011/no-reversed-links Reversed link syntax [(bad link)[https://bad.com]]",
+        message=message,
         range=Range(
-            start=Position(line=0, character=0),
-            end=Position(line=0, character=1),
+            start=Position(line=1, character=0),
+            end=Position(line=1, character=1),
         ),
         severity=DiagnosticSeverity.Error,
     )

@@ -16,6 +16,9 @@ from src.lsp.custom.features import Feature
 class Completer(Feature):
     def run(self, uri: str, cursor_position: Position) -> Optional[CompletionList]:
         if self.server.configuration is None:
+            self.server.logger.warning(
+                "Received completion request without any server config"
+            )
             return None
 
         language_id = self.server.workspace.get_document(uri).language_id
@@ -25,6 +28,7 @@ class Completer(Feature):
         )
         completions = []
         for _id, config in configs.items():
+            self.server.logger.debug(f"Running completion request for: {_id}: {config}")
             self.config = config
             items = self.complete(uri, cursor_position)
             completions.extend(items)
@@ -60,7 +64,6 @@ class Completer(Feature):
         cursor_position: Position,
     ) -> str:
         # TODO: probably refactor into a list of Tuple pairs?
-        command = command.replace("{file}", text_doc_uri.replace("file://", ""))
         command = command.replace("{word}", word)
         command = command.replace("{cursor_line}", str(cursor_position.line))
         command = command.replace("{cursor_char}", str(cursor_position.character))

@@ -83,6 +83,8 @@ class CustomLanguageServer(pygls_server.LanguageServer):
             **typing.cast(Dict, params.initialization_options)
         )
 
+        self.logger.info(f"Serialized config from editor: {self.config}")
+
         self.custom.initialize()
 
     @property

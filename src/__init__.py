@@ -1,2 +1,4 @@
-# TODO: Parse out the version from pyproject.toml
-__version__ = "0.3.0"
+from pathlib import Path
+from single_source import get_version
+
+__version__ = get_version(__name__, Path(__file__).parent.parent)
