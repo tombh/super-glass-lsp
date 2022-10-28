@@ -34,10 +34,11 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/setup-node@v3
       - name: Install external tool dependencies
         run: |
           sudo apt-get install jq fzf mypy
-          npm install --global markdownlint
+          sudo npm install --global markdownlint-cli && markdownlint --version
       - uses: actions/checkout@v2.3.4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -50,8 +51,12 @@ jobs:
       - name: Install project dependencies
         run: poetry install
       - name: Run tests
-        run: poetry -vvv run python -m pytest --log-cli-level=DEBUG
-      - name: LSP server debug logs (if tests fail)
+        run: poetry run python -m pytest
+      - name: Rerun tests with full verbosity (if tests fail)
         if: ${{ failure() }}
-        run: cat ./lsp-server-test.log || echo "No log file"
+        run: |
+          echo "PYTEST AND CLIENT LOGS"
+          poetry run python -m pytest -vvv --log-cli-level=DEBUG || true
+          echo "SERVER LOGS"
+          cat ./lsp-server-test.log || echo "No log file"
 
