@@ -9,10 +9,15 @@ from pytest_lsp import ClientServerConfig
 from pytest_lsp import make_client_server
 from pytest_lsp import make_test_client
 
-from src.lsp.custom import CUSTOM_SERVER_CONFIG_COMMAND
+from super_glass_lsp.lsp.custom import CUSTOM_SERVER_CONFIG_COMMAND
 
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
-SERVER_CMD = [sys.executable, "src/main.py", "--logfile", "lsp-server-test.log"]
+SERVER_CMD = [
+    sys.executable,
+    "super_glass_lsp/main.py",
+    "--logfile",
+    "lsp-server-test.log",
+]
 
 
 @pytest.mark.asyncio

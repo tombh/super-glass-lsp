@@ -1,24 +1,25 @@
 _🚧 WIP: you're very welcome to try this, but I'm breaking a lot at the moment (October 16th)_
 
-# CLI Tools LSP Server and/or Pygls Starting Template
+# Super Glass
+## Generic LSP Server and/or Pygls Starting Template
 
-(Considering a rename to "Super Glass" and moving it to a "Pygls-Org" github org)
+<img src="logo.png" align="left" />
 
 This project has 2 goals.
 
-1. A generic LSP server that parses CLI tools, or indeed any program that outputs to STDOUT, such as  linters, formatters, style checkers, etc and converts their output to LSP-compatible behaviour.
-2. An easily-forkable template to start your own custom LSP server using [Pygls](https://github.com/openlawlibrary/pygls).
+  1. A generic LSP server that parses CLI tools, or indeed any program that outputs to STDOUT, such as  linters, formatters, style checkers, etc and converts their output to LSP-compatible behaviour.
+  2. An easily-forkable template to start your own custom LSP server using [Pygls](https://github.com/openlawlibrary/pygls).
 
-Because the heavy-lifting of this language server is done by external tooling (think `pylint`, `jq`, `markdownlint`, etc), there is minimal implementation-specific code in this repo. That is to say that the majority of the code here is applicable to any language server built with [Pygls](https://github.com/openlawlibrary/pygls). Or at the very least, it demonstrates a reasonable starting point. Deleting the `src/lsp/custom` folder should leave the codebase as close as possible to the minimum starting point for your own custom language server. Then you will also want to rename occurrences of `[C|c]ustom` to your own language server's name.
+Because the heavy-lifting of this language server is done by external tooling (think `pylint`, `jq`, `markdownlint`, etc), there is minimal implementation-specific code in this repo. That is to say that the majority of the code here is applicable to any language server built with [Pygls](https://github.com/openlawlibrary/pygls). Or at the very least, it demonstrates a reasonable starting point. Deleting the `super_glass_lsp/lsp/custom` folder should leave the codebase as close as possible to the minimum starting point for your own custom language server. Then you will also want to rename occurrences of `[C|c]ustom` to your own language server's name.
 
 ## Installation
 
-`pip install cli-tools-lsp`
+`pip install super-glass-lsp`
 
 ## Usage
 
 ### Quickstart
-Once you've installed the language server and [set it up in your editor](https://github.com/tombh/cli-tools-lsp#editor-setups), it should be as easy as this to add new features (this is YAML, but your editor likely has its own config format):
+Once you've installed the language server and [set it up in your editor](https://github.com/tombh/super-glass#editor-setups), it should be as easy as this to add new features (this is YAML, but your editor likely has its own config format):
 ```yaml
 # This is jsut an ID, so can be anything. Internally it's important so that you can
 # override existing configs (either the bundled defaults, or configs you have
@@ -50,7 +51,7 @@ fuzzy_similar_words_completion:
 
 ### Configuration
 
-The server comes with a lot of [defaults](src/config.default.yaml). To enable a particular tool simple provide the `enabled: true` field for that tool. For example:
+The server comes with a lot of [defaults](super_glass_lsp/config.default.yaml). To enable a particular tool simple provide the `enabled: true` field for that tool. For example:
 ```yaml
 # This is YAML, but should be whatever format your editor's config is
 initialization_options:
@@ -61,6 +62,7 @@ initialization_options:
 
 TODO:
 * [ ] Explain all the fields and tokens for each LSP feature
+* [ ] Remember to describe the format array lines priorities
 
 ## Editor Setups
 
@@ -77,8 +79,8 @@ Because this is a generic language server, the filetype/language that the server
     pattern = { "*" },
     callback = function()
       vim.lsp.start({
-        name = "clitools",
-        cmd = { "cli-tools-lsp" },
+        name = "super-glass",
+        cmd = { "super-glass-lsp" },
         root_dir = vim.fs.dirname(vim.fs.find({ ".git" }, { upward = true })[1]),
         init_options = {
           configs = {
@@ -98,11 +100,11 @@ Because this is a generic language server, the filetype/language that the server
 <summary>Vim (`vim-lsp`)</summary>
 
   ```vim
-  augroup LspCLITools
+  augroup LspSuperGlass
   au!
   autocmd User lsp_setup call lsp#register_server({
-      \ 'name': 'cli-tools-lsp',
-      \ 'cmd': {server_info->['cli-tools-lsp', '--logfile', 'path/to-logfile']},
+      \ 'name': 'super-glass',
+      \ 'cmd': {server_info->['super-glass-lsp', '--logfile', 'path/to-logfile']},
       \ 'allowlist': ['vim', 'eruby', 'markdown', 'yaml'],
       \ 'initialization_options': { "configs":
       \   { "fuzzy_buffer_tokens": {
@@ -128,10 +130,10 @@ Because this is a generic language server, the filetype/language that the server
   ```
   (make-lsp-client :new-connection
   (lsp-stdio-connection
-    `(,(executable-find "cli-lsp-tools") "--logfile" "path/to/logs"))
+    `(,(executable-find "super-glass-lsp") "--logfile" "path/to/logs"))
     :activation-fn (lsp-activate-on "json")
     :initialization-options ; TODO: I'm not an Emacs user, how do we provide these options?
-    :server-id 'cli-tools-lsp')))
+    :server-id 'super-glass-lsp')))
   ```
 </details>
 
@@ -158,6 +160,8 @@ Uses [@alcarney](https://github.com/alcarney)'s [pytest-lsp module](https://gith
 ## Acknowledgements
 
 This projects takes a lot of inspiration from [@alcarney](https://github.com/alcarney)'s fantastic Sphinx/RST LSP server [Esbonio](https://github.com/swyddfa/esbonio). 
+
+Logo is from [a sticker I found on Amazon](https://www.amazon.com/-/es/Superman-S-Adhesivo-reflectante-plateado/dp/B00PEZKHV8), obviously want a proper logo before I publish.
 
 ## Other generic LSP servers
 

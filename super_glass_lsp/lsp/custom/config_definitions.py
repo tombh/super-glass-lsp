@@ -11,7 +11,7 @@ class AutoName(Enum):
 
 # TODO: Rename? Because it's specific to diagnostics?
 class OutputParsingConfig(BaseModel):
-    """Config for the output of CLI tools"""
+    """Config for the output of `command`s run in the sub shell"""
 
     @classmethod
     def default(cls):
@@ -19,7 +19,7 @@ class OutputParsingConfig(BaseModel):
 
     formats: List[str] = Field()
     """
-    Token definitions for parsing the output of the CLI tool.
+    Token definitions for parsing the output of the commands.
     This a Python token string that defines the components of a parsable line.
     `{msg}`, `{line:d}` and `{col:d}` are required.
     Eg; "{msg} at line {line:d}, column {col:d}"
@@ -28,10 +28,10 @@ class OutputParsingConfig(BaseModel):
     """
 
     line_offset: Optional[int] = Field(0)
-    """The line index offset if the CLI tool doesn't start at 0, for example"""
+    """The line index offset if the CLI tool doesn't 0-index lines, for example"""
 
     col_offset: Optional[int] = Field(0)
-    """The col index offset if the CLI tool doesn't start at 0, for example"""
+    """The col index offset if the CLI tool doesn't 0-index chars, for example"""
 
 
 class LSPFeature(AutoName):
@@ -42,7 +42,7 @@ class LSPFeature(AutoName):
     formatter = auto()
 
 
-class CLIToolConfigBasic(BaseModel):
+class ConfigBasic(BaseModel):
     """Absolute minimum config that the LSP server can recieve from the client"""
 
     # TODO: I do not like this repetition. But we're going to be replacing Pydantic in
@@ -58,8 +58,8 @@ class CLIToolConfigBasic(BaseModel):
     parsing: Optional[OutputParsingConfig] = Field()
 
 
-class CLIToolConfig(CLIToolConfigBasic):
-    """The formal definition of a CLI Tool"""
+class Config(ConfigBasic):
+    """The formal definition of a single config"""
 
     enabled: bool = Field(True)
     """
@@ -74,7 +74,7 @@ class CLIToolConfig(CLIToolConfigBasic):
 
     language_id: str = Field("*")
     """
-    The language to which will trigger this CLI tool behaviour.
+    The language that will trigger this config's behaviour.
     Must be a `language_id` recognised by LSP, eg; `json`, `python`, etc
     """
 
@@ -106,13 +106,14 @@ class CLIToolConfig(CLIToolConfigBasic):
     parsing: Optional[OutputParsingConfig] = Field(
         default_factory=OutputParsingConfig.default
     )
-    """Config for the output of CLI tools"""
+    """Config for the output of config commands"""
 
 
-class CLIToolConfigs:
-    configs: Dict[str, CLIToolConfig] = Field()
+class Configs:
+    configs: Dict[str, Config] = Field()
     """
-    Parent field for all CLI tool configs.
+    Parent field for all configs.
+
     This is the entire collection of CLI tools, from linters, formatters, and
     all other manner of strange and wonderful CLI tools.
     """
@@ -121,9 +122,10 @@ class CLIToolConfigs:
 class InitializationOptions(BaseModel):
     """The initialization options we can expect to receive from a client."""
 
-    configs: Dict[str, Union[CLIToolConfig, CLIToolConfigBasic]] = Field()
+    configs: Dict[str, Union[Config, ConfigBasic]] = Field()
     """
-    Parent field for all CLI tool configs.
+    Parent field for all configs.
+
     This is the entire collection of CLI tools, from linters, formatters, and
     all other manner of strange and wonderful CLI tools.
     """

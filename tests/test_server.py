@@ -11,7 +11,7 @@ from pytest_lsp import make_test_client
 
 
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
-SERVER_CMD = [sys.executable, "src/main.py"]
+SERVER_CMD = [sys.executable, "super_glass_lsp/main.py"]
 
 
 @pytest.mark.asyncio

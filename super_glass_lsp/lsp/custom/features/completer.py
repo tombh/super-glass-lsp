@@ -9,8 +9,8 @@ from pygls.lsp import (
     CompletionList,
 )
 
-from src.lsp.custom.config_definitions import LSPFeature
-from src.lsp.custom.features import Feature
+from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
+from super_glass_lsp.lsp.custom.features import Feature
 
 
 class Completer(Feature):

@@ -7,5 +7,4 @@
 
 ## TODO
 
-* [ ] Unify version definition in one place
 * [ ] Automated CHANGELOG.md

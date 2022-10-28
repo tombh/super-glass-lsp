@@ -1,4 +1,4 @@
-name: Continous Integration
+name: CI
 
 on:
   pull_request:
@@ -22,9 +22,9 @@ jobs:
       - name: Flake8
         run: poetry run flake8
       - name: Mypy type checker
-        run: poetry run mypy src
+        run: poetry run mypy super_glass_lsp tests
       - name: Black formatting
-        run: poetry run black src tests
+        run: poetry run black super_glass_lsp tests
   test:
     strategy:
       fail-fast: false
@@ -51,4 +51,7 @@ jobs:
         run: poetry install
       - name: Run tests
         run: poetry -vvv run python -m pytest --log-cli-level=DEBUG
+      - name: LSP server debug logs (if tests fail)
+        if: ${{ failure() }}
+        run: cat ./lsp-server-test.log || echo "No log file"
 

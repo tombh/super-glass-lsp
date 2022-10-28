@@ -10,12 +10,15 @@ from pytest_lsp import ClientServerConfig
 from pytest_lsp import make_client_server
 from pytest_lsp import make_test_client
 
-from src.lsp.custom.hub import Hub
-
-TEST_TIMEOUT = 5
+from super_glass_lsp.lsp.custom.hub import Hub
 
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
-SERVER_CMD = [sys.executable, "src/main.py", "--logfile", "./lsp-server-test.log"]
+SERVER_CMD = [
+    sys.executable,
+    "super_glass_lsp/main.py",
+    "--logfile",
+    "./lsp-server-test.log",
+]
 
 
 def lsp_client_server_for(id: str):
@@ -57,7 +60,6 @@ def default_config_test(id: str, executable: str, extension: str):
     def wrapper(func):
         reason = f"`{executable}` executable not found"
 
-        @pytest.mark.timeout(TEST_TIMEOUT)
         @pytest.mark.skipif(not shutil.which(executable), reason=reason)
         @pytest.mark.asyncio
         async def inner(*args, **kwargs):
@@ -84,8 +86,9 @@ def default_config_test(id: str, executable: str, extension: str):
     return wrapper
 
 
-async def wait_for_diagnostic_count(client: Client, uri: str, count: int):
-    timeout = TEST_TIMEOUT - 1
+async def wait_for_diagnostic_count(
+    client: Client, uri: str, count: int, timeout: int = 4
+):
     pause = 0.01
     accumulated = 0.0
     while True:

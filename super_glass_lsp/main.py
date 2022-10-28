@@ -1,14 +1,14 @@
 import logging
 
-from src.lsp.setup import server  # type: ignore
+from super_glass_lsp.lsp.setup import server  # type: ignore
 
 
 def main() -> None:
     from argparse import ArgumentParser
 
-    from src import __version__
+    from super_glass_lsp import __version__
 
-    parser = ArgumentParser(description="CLI Tools Language Server")
+    parser = ArgumentParser(description="Super Glass Generic Language Server")
 
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
@@ -26,7 +26,7 @@ def main() -> None:
     else:
         logging.basicConfig(level=logging.INFO)
 
-    print("Starting CLI Tools LSP server on STDIO...")
+    print("Starting Super Glass LSP server on STDIO...")
     server.start_io()  # type: ignore
 
 

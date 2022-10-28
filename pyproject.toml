@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "cli-tools-lsp"
-version = "0.4.0"
+name = "super-glass-lsp"
+version = "0.4.2"
 description = "Generic LSP to parse the output of CLI tools, linters, formatters, etc"
 authors = ["Thomas Buckley-Houston <tom@tombh.co.uk>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{include = "super_glass_lsp"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -26,7 +26,7 @@ types-pyyaml = "^6.0.12"
 pytest-timeout = "^2.1.0"
 
 [tool.poetry.scripts]
-cli-tools-lsp = "src.main:main"
+super-glass-lsp   = "super_glass_lsp.main:main"
 
 [build-system]
 requires = ["poetry-core"]
@@ -34,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 exclude = [
-    "src/main.py"
+    "super-glass-lsp/main.py"
 ]
 
 [tool.pylsp-mypy]

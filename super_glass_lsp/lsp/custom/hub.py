@@ -6,7 +6,7 @@ import typing
 from typing import TYPE_CHECKING, Optional, Dict
 
 if TYPE_CHECKING:
-    from src.lsp.server import CustomLanguageServer
+    from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from pygls.lsp.types import (
     DidChangeTextDocumentParams,
@@ -18,13 +18,13 @@ from pygls.lsp import (
     CompletionList,
 )
 
-from src.lsp.custom import config_definitions
-from src.lsp.custom.config_definitions import (
+from super_glass_lsp.lsp.custom import config_definitions
+from super_glass_lsp.lsp.custom.config_definitions import (
     LSPFeature,
-    CLIToolConfig,
+    Config,
 )
-from src.lsp.custom.features.diagnoser import Diagnoser
-from src.lsp.custom.features.completer import Completer
+from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
+from super_glass_lsp.lsp.custom.features.completer import Completer
 
 DEFAULT_CONFIG_PATH = "../../config.default.yaml"
 
@@ -38,12 +38,12 @@ class Hub:
 
     def get_all_config_by(
         self, feature: LSPFeature, language: Optional[str]
-    ) -> Dict[str, CLIToolConfig]:
+    ) -> Dict[str, Config]:
         if self.server.config is None:
             self.server.logger.warning("`server.config` not set")
             return {}
 
-        filtered_config: Dict[str, CLIToolConfig] = {}
+        filtered_config: Dict[str, Config] = {}
         for id, config in self.server.config.configs.items():
             self.server.logger.debug(f"Got config: {[id, config]}")
             # In order to fully use the type system it might be possible to do this with `TypeVar`

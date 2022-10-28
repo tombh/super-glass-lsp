@@ -4,12 +4,12 @@ from typing import List, Optional, Dict
 from parse import parse  # type: ignore
 from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity
 
-from src.lsp.custom.config_definitions import (
-    CLIToolConfig,
+from super_glass_lsp.lsp.custom.config_definitions import (
+    Config,
     OutputParsingConfig,
     LSPFeature,
 )
-from src.lsp.custom.features import Feature
+from super_glass_lsp.lsp.custom.features import Feature
 
 
 class Diagnoser(Feature):
@@ -71,12 +71,14 @@ class Diagnoser(Feature):
             config = OutputParsingConfig(**typing.cast(Dict, {"formats": ["{line}"]}))
 
         for format_string in config.formats:
-            maybe_diagnostic = self.parse_line_maybe(config, format_string, line)  # type: ignore
+            maybe_diagnostic = self.parse_line_maybe(
+                config, format_string, line
+            )  # type: ignore
             if maybe_diagnostic is not None:
                 return maybe_diagnostic
 
         # TODO: What's the proper way of communicating this?
-        message = "CLI Tool LSP failed to parse CLI output"
+        message = "Super Glaass failed to parse shell output"
         self.server.logger.warning(f"{message}: {line}")
         return self.build_diagnostic_object(message)
 
@@ -140,7 +142,7 @@ class Diagnoser(Feature):
 
         return output
 
-    def diagnose(self, text_doc_uri: str, config: CLIToolConfig) -> List[Diagnostic]:
+    def diagnose(self, text_doc_uri: str, config: Config) -> List[Diagnostic]:
         diagnostics: List[Diagnostic] = []
 
         output = self.run_cli_tool(config.command, text_doc_uri, config.stdout)

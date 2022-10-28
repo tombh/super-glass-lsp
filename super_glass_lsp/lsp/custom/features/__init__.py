@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Optional, Dict, Any
 
 if TYPE_CHECKING:
-    from src.lsp.server import CustomLanguageServer
+    from super_glass_lsp.lsp.server import CustomLanguageServer
 
 import subprocess
 
-from src.lsp.custom.config_definitions import CLIToolConfig
+from super_glass_lsp.lsp.custom.config_definitions import Config
 
 SubprocessArgs = Dict[str, Any]
 
@@ -19,7 +19,7 @@ class Feature:
 
         # TODO: Don't make this optional. Maybe it should be the config ID, then look up the
         # actual config on self.server?
-        self.config: Optional[CLIToolConfig] = None
+        self.config: Optional[Config] = None
 
     def shell(
         self,

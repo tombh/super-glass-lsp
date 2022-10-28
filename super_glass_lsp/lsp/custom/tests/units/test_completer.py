@@ -2,9 +2,9 @@ import pytest  # noqa
 
 from pygls.lsp.types import Position
 
-from src.lsp.server import CustomLanguageServer
-from src.lsp.custom.features.completer import Completer
-from src.lsp.custom.config_definitions import CLIToolConfig
+from super_glass_lsp.lsp.server import CustomLanguageServer
+from super_glass_lsp.lsp.custom.features.completer import Completer
+from super_glass_lsp.lsp.custom.config_definitions import Config
 
 
 def test_completer(mocker):
@@ -15,11 +15,11 @@ def test_completer(mocker):
         ]
     )
     mocker.patch(
-        "src.lsp.custom.features.completer.Completer.run_cli_tool",
+        "super_glass_lsp.lsp.custom.features.completer.Completer.run_cli_tool",
         return_value=cli_output,
     )
     mocker.patch(
-        "src.lsp.custom.features.completer.Completer.get_word_under_cursor",
+        "super_glass_lsp.lsp.custom.features.completer.Completer.get_word_under_cursor",
         return_value="fo",
     )
 
@@ -31,7 +31,7 @@ def test_completer(mocker):
         "language_id": "testing",
         "command": "",
     }
-    completer.config = CLIToolConfig(**config_from_client)
+    completer.config = Config(**config_from_client)
 
     completions = completer.complete("path/to/file", Position(line=0, character=0))
 

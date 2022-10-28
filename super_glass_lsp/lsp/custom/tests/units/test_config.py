@@ -1,6 +1,6 @@
 import pytest  # noqa
 
-from src.lsp.server import CustomLanguageServer
+from super_glass_lsp.lsp.server import CustomLanguageServer
 
 
 def test_config_merging():

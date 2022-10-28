@@ -8,7 +8,7 @@ from pygls import server as pygls_server
 
 from .custom.hub import Hub as CustomFeatures
 from .custom.config_definitions import (
-    CLIToolConfigs as CustomConfig,
+    Configs as CustomConfig,
 )
 from .custom.config_definitions import (
     InitializationOptions as CustomInitializationOptions,
