@@ -30,12 +30,22 @@ configs:
     <<: *defaults
     lsp_feature: diagnostic
     language_id: python
-    command: "mypy --no-color-output --no-error-summary {file}"
+    command: |
+      args=(
+        --no-color-output
+        --no-error-summary
+        # This means that Mypy _does_ check the entire codebase, but doesn't output errors
+        # outside the current file
+        --follow-imports=silent
+        {file}
+      )
+      mypy "${args[@]}"
     piped: false
     stdout: true
     parsing:
       formats:
         - "{}:{line:d}: {severity}: {msg}"
+        - "{}: {severity}: {msg}"
       line_offset: -1
 
   fuzzy_buffer_tokens:
