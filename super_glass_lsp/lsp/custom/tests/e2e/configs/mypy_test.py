@@ -11,9 +11,10 @@ from pygls.lsp.types import DiagnosticSeverity
 
 from . import default_config_test, wait_for_diagnostic_count
 
+TIMEOUT = 16
 
-@pytest.mark.skip()
-@pytest.mark.timeout(10)
+
+@pytest.mark.timeout(TIMEOUT)
 @default_config_test("mypy", "python", "py")
 async def test_mypy(client: Client, file_path: str, uri: str):
     good = """a: int = 1"""
@@ -26,7 +27,7 @@ async def test_mypy(client: Client, file_path: str, uri: str):
 
     client.notify_did_change(uri, bad)
 
-    await wait_for_diagnostic_count(client, uri, 1, timeout=15)
+    await wait_for_diagnostic_count(client, uri, 1, timeout=TIMEOUT - 1)
 
     actual = client.diagnostics[uri][0]
 
@@ -50,7 +51,7 @@ async def test_mypy(client: Client, file_path: str, uri: str):
     # Undo the changes, we should see the diagnostic be removed.
     client.notify_did_change(uri, good)
 
-    await wait_for_diagnostic_count(client, uri, 0, timeout=9)
+    await wait_for_diagnostic_count(client, uri, 0, timeout=TIMEOUT - 1)
 
     # Ensure that we remove any resolved diagnostics.
     assert len(client.diagnostics[uri]) == 0

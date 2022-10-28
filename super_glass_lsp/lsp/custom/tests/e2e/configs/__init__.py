@@ -14,11 +14,18 @@ from super_glass_lsp.lsp.custom.hub import Hub
 
 ROOT_PATH = pathlib.Path(__file__).parent / "workspace"
 SERVER_CMD = [
+    "timeout",
+    "30",
     sys.executable,
     "super_glass_lsp/main.py",
     "--logfile",
     "./lsp-server-test.log",
 ]
+
+
+@pytest.fixture(autouse=True)
+def run_around_tests():
+    yield
 
 
 def lsp_client_server_for(id: str):

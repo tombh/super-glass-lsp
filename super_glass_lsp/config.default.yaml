@@ -30,18 +30,17 @@ configs:
     <<: *defaults
     lsp_feature: diagnostic
     language_id: python
+    # `--follow-imports=silent` means that Mypy _does_ check the entire codebase, but _doesn't_ output
+    # errors outside the current file.
     command: |
-      args=(
-        --no-color-output
-        --no-error-summary
-        # This means that Mypy _does_ check the entire codebase, but doesn't output errors
-        # outside the current file
-        --follow-imports=silent
+      mypy \
+        --no-color-output \
+        --no-error-summary \
+        --follow-imports=silent \
         {file}
-      )
-      mypy "${args[@]}"
     piped: false
     stdout: true
+    timeout: 15
     parsing:
       formats:
         - "{}:{line:d}: {severity}: {msg}"
