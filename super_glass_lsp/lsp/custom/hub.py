@@ -13,10 +13,7 @@ from pygls.lsp.types import (
     DidOpenTextDocumentParams,
 )
 
-from pygls.lsp import (
-    CompletionParams,
-    CompletionList,
-)
+from pygls.lsp import CompletionParams, CompletionList, DocumentFormattingParams
 
 from super_glass_lsp.lsp.custom import config_definitions
 from super_glass_lsp.lsp.custom.config_definitions import (
@@ -25,6 +22,10 @@ from super_glass_lsp.lsp.custom.config_definitions import (
 )
 from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
 from super_glass_lsp.lsp.custom.features.completer import Completer
+from super_glass_lsp.lsp.custom.features.formatter import (
+    Formatter,
+    SuperGlassFormatResult,
+)
 
 DEFAULT_CONFIG_PATH = "../../config.default.yaml"
 
@@ -93,3 +94,9 @@ class Hub:
     def completion_request(self, params: CompletionParams) -> Optional[CompletionList]:
         completer = Completer(self.server)
         return completer.run(params.text_document.uri, params.position)
+
+    def formatting_request(
+        self, params: DocumentFormattingParams
+    ) -> SuperGlassFormatResult:
+        formatter = Formatter(self.server)
+        return formatter.run(params.text_document.uri)

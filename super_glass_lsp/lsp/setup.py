@@ -1,19 +1,23 @@
-from typing import Optional
+from typing import Optional, List
 
 from pygls.capabilities import COMPLETION
 from pygls.lsp import (
     CompletionParams,
     CompletionList,
+    DocumentFormattingOptions,
+    DocumentFormattingParams,
 )
 from pygls.lsp.methods import (
     INITIALIZE,
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_OPEN,
+    FORMATTING,
 )
 from pygls.lsp.types import (
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
     InitializeParams,
+    TextEdit,
 )
 
 from . import dump
@@ -159,9 +163,78 @@ def completion(params: CompletionParams) -> Optional[CompletionList]:
     }
     ```
 
+    Returns. Notable/illustrative fields (non-exhaustive):
+    ```
+    CompletionList {
+        is_incomplete: bool
+        items: List[CompletionItem {
+            label: str
+            kind: Optional[CompletionItemKind]
+            tags: Optional[List[CompletionItemTag]]
+            detail: Optional[str]
+            documentation: Optional[Union[str, MarkupContent]]
+            deprecated: Optional[bool]
+            preselect: Optional[bool]
+            sort_text: Optional[str]
+            filter_text: Optional[str]
+            insert_text: Optional[str]
+            insert_text_format: Optional[InsertTextFormat]
+            insert_text_mode: Optional[InsertTextMode]
+            text_edit: Optional[Union[TextEdit, InsertReplaceEdit]]
+            additional_text_edits: Optional[List[TextEdit]]
+            commit_characters: Optional[List[str]]
+            command: Optional[Command]
+            data: Optional[Any]
+        }]
+    }
+    ```
+
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
     """
     return server.custom.completion_request(params)
+
+
+@server.feature(
+    FORMATTING,
+    DocumentFormattingOptions(),
+)
+def formatting(params: DocumentFormattingParams) -> Optional[List[TextEdit]]:
+    """
+    The document formatting request is sent from the client to the server to format a whole
+    document.
+
+
+    `params` notable/illustrative fields (non-exhaustive):
+    ```
+    {
+        text_document: TextDocumentIdentifier {
+            uri: str
+        }
+        options: FormattingOptions {
+            tab_size: int
+            insert_spaces: bool
+            trim_trailing_whitespace: Optional[bool]
+            insert_final_newline: Optional[bool]
+            trim_final_newlines: Optional[bool]
+        }
+    }
+    ```
+
+    Returns. Notable/illustrative fields (non-exhaustive):
+    ```
+    [
+        Textedit {
+            range: Range {
+                start: Position
+                end: Position
+            }
+            new_text: str
+        }
+    }
+    ```
+    https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_formatting
+    """
+    return server.custom.formatting_request(params)
 
 
 @server.command(CUSTOM_SERVER_CONFIG_COMMAND)

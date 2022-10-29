@@ -47,6 +47,12 @@ configs:
         - "{}: {severity}: {msg}"
       line_offset: -1
 
+  python_black_formatter:
+    <<: *defaults
+    lsp_feature: formatter
+    language_id: python
+    command: "black -"
+
   fuzzy_buffer_tokens:
     <<: *defaults
     lsp_feature: completion
