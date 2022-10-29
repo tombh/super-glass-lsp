@@ -64,8 +64,8 @@ class Feature:
             self.server.logger.warning(message)
             self.server.show_message(message)
             result = subprocess.CompletedProcess("", returncode=1)
-        except subprocess.CalledProcessError:
-            message = f"Shell error for `{command}`: {result.stdout}"
+        except subprocess.CalledProcessError as error:
+            message = f"Shell error for `{command}`: {error.stderr}"
             self.server.logger.error(message)
             self.server.show_message(message)
         return result
