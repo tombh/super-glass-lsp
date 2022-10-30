@@ -53,6 +53,15 @@ configs:
     language_id: python
     command: "black -"
 
+  flake8:
+    lsp_feature: diagnostic
+    language_id: python
+    command: "flake8 --color never -"
+    stdout: true
+    parsing:
+      formats:
+        - "{}:{line:d}:{char:d}: {msg}"
+
   fuzzy_buffer_tokens:
     <<: *defaults
     lsp_feature: completion
