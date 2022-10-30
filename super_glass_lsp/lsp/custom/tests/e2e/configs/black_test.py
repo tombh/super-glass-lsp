@@ -21,7 +21,7 @@ holy_2_space_indent_client = FormattingOptions(
 )
 
 
-@default_config_test("python_black_formatter", "black", "py")
+@default_config_test("black", "black", "py")
 async def test_black(client: Client, file_path: str, uri: str):
     contents = "\n".join(
         ['foo1={"bar1":True}', 'foo2={"bar2":"🫠"}', 'foo3={"bar3":False}']

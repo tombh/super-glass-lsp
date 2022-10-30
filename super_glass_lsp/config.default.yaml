@@ -14,8 +14,6 @@ configs:
         - "stdin:{line:d}:{col:d} {msg}"
         - "stdin:{line:d} {msg}"
         - "stdin {msg}"
-      line_offset: -1
-      col_offset: -1
 
   jqlint:
     <<: *defaults
@@ -45,9 +43,8 @@ configs:
       formats:
         - "{}:{line:d}: {severity}: {msg}"
         - "{}: {severity}: {msg}"
-      line_offset: -1
 
-  python_black_formatter:
+  black:
     <<: *defaults
     lsp_feature: formatter
     language_id: python

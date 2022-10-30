@@ -33,8 +33,8 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
         source="CustomLanguageServer",
         message="parse error: Expected value before ','",
         range=Range(
-            start=Position(line=1, character=2),
-            end=Position(line=1, character=3),
+            start=Position(line=0, character=1),
+            end=Position(line=0, character=2),
         ),
         severity=DiagnosticSeverity.Error,
     )

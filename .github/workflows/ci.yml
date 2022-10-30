@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-node@v3
       - name: Install external tool dependencies
         run: |
-          sudo apt-get install jq fzf mypy black
+          sudo apt-get install jq fzf mypy black flake8
           sudo npm install --global markdownlint-cli && markdownlint --version
       - uses: actions/checkout@v2.3.4
       - name: Set up Python ${{ matrix.python-version }}
