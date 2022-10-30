@@ -2,7 +2,7 @@ import typing
 from typing import List, Optional, Dict
 
 from parse import parse  # type: ignore
-from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity
+from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity, MessageType
 
 from super_glass_lsp.lsp.custom.config_definitions import (
     Config,
@@ -63,7 +63,7 @@ class Diagnoser(Feature):
         return DiagnosticSeverity.Error
 
     def parse_line(
-        self, maybe_config: Optional[OutputParsingConfig], line: str
+        self, maybe_config: Optional[OutputParsingConfig], line: str, command: str
     ) -> Diagnostic:
         if maybe_config is not None:
             config = maybe_config
@@ -77,10 +77,13 @@ class Diagnoser(Feature):
             if maybe_diagnostic is not None:
                 return maybe_diagnostic
 
-        # TODO: What's the proper way of communicating this?
-        message = "Super Glaass failed to parse shell output"
-        self.server.logger.warning(f"{message}: {line}")
-        return self.build_diagnostic_object(message)
+        summary = "Super Glass failed to parse shell output"
+        command = f"Command: `{command}`"
+        debug = f"{summary}\n{command}\nOutput: {line}"
+        self.server.logger.warning(debug)
+        self.server.show_message(debug, msg_type=MessageType.Warning)
+        # TODO: Maybe not send a diagnostic if there was an error?
+        return self.build_diagnostic_object(summary)
 
     def parse_line_maybe(
         self, config: OutputParsingConfig, format_string: str, line: str
@@ -150,10 +153,7 @@ class Diagnoser(Feature):
             return diagnostics
 
         for line in output.splitlines():
-            diagnostic = self.parse_line(
-                config.parsing,
-                line,
-            )
+            diagnostic = self.parse_line(config.parsing, line, config.command)
             diagnostics.append(diagnostic)
 
         return diagnostics

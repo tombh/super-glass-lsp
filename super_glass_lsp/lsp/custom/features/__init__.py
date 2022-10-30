@@ -68,4 +68,5 @@ class Feature:
             message = f"Shell error for `{command}`: {error.stderr}"
             self.server.logger.error(message)
             self.server.show_message(message)
+            result = subprocess.CompletedProcess("", returncode=1)
         return result

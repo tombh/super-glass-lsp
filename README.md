@@ -63,6 +63,8 @@ initialization_options:
 TODO:
 * [ ] Explain all the fields and tokens for each LSP feature
 * [ ] Remember to describe the format array lines priorities
+* [ ] How to set up the debug logs. But also maybe a LSP option to get all the debug in your editor
+* [ ] Remember to advise that some diagnostic tools output on STDERR, not STDOUT
 
 ## Editor Setups
 
