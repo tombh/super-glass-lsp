@@ -36,11 +36,11 @@ def test_supplying_multiple_output_formatters(mocker):
     assert len(diagnostics) == 3
 
     assert diagnostics[0].message == "all"
-    assert diagnostics[0].range.start.line == 1
-    assert diagnostics[0].range.start.character == 2
+    assert diagnostics[0].range.start.line == 0
+    assert diagnostics[0].range.start.character == 1
 
     assert diagnostics[1].message == "no col"
-    assert diagnostics[1].range.start.line == 11
+    assert diagnostics[1].range.start.line == 10
     assert diagnostics[1].range.start.character == 0
 
     assert diagnostics[2].message == "just the message"

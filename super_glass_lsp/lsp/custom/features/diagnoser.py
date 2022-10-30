@@ -88,6 +88,9 @@ class Diagnoser(Feature):
     def parse_line_maybe(
         self, config: OutputParsingConfig, format_string: str, line: str
     ) -> Optional[Diagnostic]:
+        # Most diagnostic tools seem to be 1-indexed. But the LSP spec is zero-indexed
+        ZERO_INDEXING = -1
+
         self.server.logger.debug(msg=f"Parsing: '{line}' with '{format_string}'")
         parsed = parse(format_string, line)
         if parsed is None:
@@ -107,11 +110,11 @@ class Diagnoser(Feature):
 
         line_number = 0
         if format_string.find("{line:d}") != -1:
-            line_number = parsed["line"]
+            line_number = parsed["line"] + line_offset + ZERO_INDEXING
 
         col_number = 0
         if format_string.find("{col:d}") != -1:
-            col_number = parsed["col"]
+            col_number = parsed["col"] + col_offset + ZERO_INDEXING
 
         message = parsed["msg"]
 
@@ -119,9 +122,6 @@ class Diagnoser(Feature):
         self.server.logger.debug(msg=f"Parsed `col` as: {col_number}")
         self.server.logger.debug(msg=f"Parsed `msg` as: {message}")
         self.server.logger.debug(msg=f"Parsed `severity` as: {severity}")
-
-        line_number += line_offset
-        col_number += col_offset
 
         return self.build_diagnostic_object(message, line_number, col_number, severity)
 
