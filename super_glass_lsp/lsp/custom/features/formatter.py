@@ -30,6 +30,8 @@ class Formatter(Feature):
                 new_text = self.run_cli_tool(config.command, text_doc_uri)
                 if not isinstance(new_text, Debounced) and new_text != "":
                     edit = self.new_text_to_textedit(new_text)
+                if isinstance(new_text, Debounced):
+                    self.server.show_message("Too many formatting requests")
         return edit
 
     def new_text_to_textedit(self, new_text: str) -> SuperGlassFormatResult:

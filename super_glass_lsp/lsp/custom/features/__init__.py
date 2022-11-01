@@ -34,34 +34,34 @@ class Feature:
     def name(self):
         return self.config_id
 
-    def get_document_from_uri(self, uri):
+    def get_document_from_uri(self, uri: str):
         return self.server.workspace.get_document(uri)
 
     def _build_cache_key(self, text_doc_uri: str):
+        if self.config_id is None:
+            raise Exception(
+                "Feature.cache: could not build cache key with None `config_id`"
+            )
         return f"{self.config_id}__{text_doc_uri}"
 
     def set_cache(self, text_doc_uri: str, items: Any):
-        if self.config_id is None:
-            raise Exception("Feature.cache: could not set cache with None `config_id`")
         key = self._build_cache_key(text_doc_uri)
         self.cache[key] = items
 
     def get_cache(self, text_doc_uri: str) -> Any:
-        if self.config_id is None:
-            raise Exception("Feature.cache: could not load with with None `config_id`")
         key = self._build_cache_key(text_doc_uri)
         return self.cache[key]
 
     def shell(
         self,
         command: str,
-        text_doc_uri: Optional[str] = None,
+        text_doc_uri: str,
         extra_subprocess_args: SubprocessArgs = {},
     ) -> Union[subprocess.CompletedProcess, Debounced]:
         if self.config_id is None or self.config is None:
             raise Exception
 
-        if self.debounce():
+        if self.debounce(text_doc_uri):
             return Debounced()
 
         if text_doc_uri is not None:
@@ -108,22 +108,24 @@ class Feature:
     def milliseconds_now(self):
         return time.time() * 1000
 
-    def debounce(self):
-        if self.config_id is None:
+    # TODO: this feels like it could be its own class
+    def debounce(self, text_doc_uri: str):
+        if self.config_id is None or self.config is None:
             raise Exception
 
-        if self.config_id not in self.debounces:
-            self._reset_debounce()
+        key = self._build_cache_key(text_doc_uri)
+
+        if key not in self.debounces:
+            self._reset_debounce(key)
             return False
 
-        elapsed = self.milliseconds_now() - self.debounces[self.config_id]
+        elapsed = self.milliseconds_now() - self.debounces[key]
         if elapsed > self.config.debounce:
-            self._reset_debounce()
+            self._reset_debounce(key)
             return False
 
         self.server.logger.debug(f"Debouncing: {self.config_id} ({elapsed}ms)")
         return True
 
-    def _reset_debounce(self):
-        # TODO: use self._build_cache_key()?
-        self.debounces[self.config_id] = self.milliseconds_now()
+    def _reset_debounce(self, key: str):
+        self.debounces[key] = self.milliseconds_now()
