@@ -29,7 +29,7 @@ async def test_markdownlint(client: Client, file_path: str, uri: str):
     actual = client.diagnostics[uri][0]
 
     assert actual == Diagnostic(
-        source="CustomLanguageServer",
+        source="markdownlint",
         message="MD011/no-reversed-links Reversed link syntax [(bad link)[https://bad.com]]",
         range=Range(
             start=Position(line=0, character=0),

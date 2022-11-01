@@ -36,7 +36,7 @@ async def test_mypy(client: Client, file_path: str, uri: str):
         'type "str", variable has type "int")'
     )
     assert actual == Diagnostic(
-        source="CustomLanguageServer",
+        source="mypy",
         message=message,
         range=Range(
             start=Position(line=1, character=0),

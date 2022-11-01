@@ -44,4 +44,3 @@ async def test_black(client: Client, file_path: str, uri: str):
             "end": {"character": 0, "line": 3},
         },
     }
-    print(response)

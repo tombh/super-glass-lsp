@@ -55,6 +55,7 @@ class ConfigBasic(BaseModel):
     stdout: Optional[bool] = Field()
     stderr: Optional[bool] = Field()
     timeout: Optional[int] = Field()
+    debounce: Optional[int] = Field()
     parsing: Optional[OutputParsingConfig] = Field()
 
 
@@ -101,6 +102,11 @@ class Config(ConfigBasic):
     timeout: int = Field(3)
     """
     How long to let the subprocess run before killing it
+    """
+
+    debounce: Optional[int] = Field(1000)
+    """
+    Minimum time in milliseconds between calls to command
     """
 
     parsing: Optional[OutputParsingConfig] = Field(

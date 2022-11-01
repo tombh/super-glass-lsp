@@ -38,6 +38,7 @@ def lsp_client_server_for(id: str):
             "configs": {
                 id: {
                     "enabled": True,
+                    "debounce": 0,
                 }
             }
         },

@@ -33,6 +33,9 @@ DEFAULT_CONFIG_PATH = "../../config.default.yaml"
 class Hub:
     def __init__(self, server: "CustomLanguageServer"):
         self.server = server
+        self.diagnoser = Diagnoser(server)
+        self.completer = Completer(server)
+        self.formatter = Formatter(server)
 
     def initialize(self):
         self.merge_config()
@@ -84,19 +87,15 @@ class Hub:
         self.server.logger.debug(f"Final merged config: {self.server.config}")
 
     def did_change(self, params: DidChangeTextDocumentParams):
-        diagnoser = Diagnoser(self.server)
-        diagnoser.run(params.text_document.uri)
+        self.diagnoser.run(params.text_document.uri)
 
     def did_open(self, params: DidOpenTextDocumentParams):
-        diagnoser = Diagnoser(self.server)
-        diagnoser.run(params.text_document.uri)
+        self.diagnoser.run(params.text_document.uri)
 
     def completion_request(self, params: CompletionParams) -> Optional[CompletionList]:
-        completer = Completer(self.server)
-        return completer.run(params.text_document.uri, params.position)
+        return self.completer.run(params.text_document.uri, params.position)
 
     def formatting_request(
         self, params: DocumentFormattingParams
     ) -> SuperGlassFormatResult:
-        formatter = Formatter(self.server)
-        return formatter.run(params.text_document.uri)
+        return self.formatter.run(params.text_document.uri)

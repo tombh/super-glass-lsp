@@ -1,4 +1,7 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING, Dict, Union
+
+if TYPE_CHECKING:
+    from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from pygls.lsp.types import (
     Position,
@@ -10,10 +13,15 @@ from pygls.lsp import (
 )
 
 from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.features import Feature
+from super_glass_lsp.lsp.custom.features import Feature, Debounced
 
 
 class Completer(Feature):
+    def __init__(self, server: "CustomLanguageServer"):
+        super().__init__(server)
+
+        self.cache: Dict[str, List[CompletionItem]] = {}
+
     def run(self, uri: str, cursor_position: Position) -> Optional[CompletionList]:
         if self.server.configuration is None:
             self.server.logger.warning(
@@ -27,8 +35,9 @@ class Completer(Feature):
             LSPFeature.completion, language_id
         )
         completions = []
-        for _id, config in configs.items():
-            self.server.logger.debug(f"Running completion request for: {_id}: {config}")
+        for id, config in configs.items():
+            self.config_id = id
+            self.server.logger.debug(f"Running completion request for: {id}: {config}")
             self.config = config
             items = self.complete(uri, cursor_position)
             completions.extend(items)
@@ -49,10 +58,15 @@ class Completer(Feature):
         output = self.run_cli_tool(
             self.config.command, text_doc_uri, word, cursor_position
         )
+
+        if isinstance(output, Debounced):
+            return self.get_cache(text_doc_uri)
+
         items = []
         for line in output.splitlines():
             item = CompletionItem(label=line)
             items.append(item)
+        self.set_cache(text_doc_uri, items)
 
         return items
 
@@ -62,13 +76,16 @@ class Completer(Feature):
         text_doc_uri: str,
         word: str,
         cursor_position: Position,
-    ) -> str:
+    ) -> Union[str, Debounced]:
         # TODO: probably refactor into a list of Tuple pairs?
         command = command.replace("{word}", word)
         command = command.replace("{cursor_line}", str(cursor_position.line))
         command = command.replace("{cursor_char}", str(cursor_position.character))
 
         result = self.shell(command, text_doc_uri)
+        if isinstance(result, Debounced):
+            return result
+
         return result.stdout.strip()
 
     def get_word_under_cursor(self, uri: str, cursor_position: Position):

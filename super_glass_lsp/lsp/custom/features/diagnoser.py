@@ -1,5 +1,5 @@
 import typing
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from parse import parse  # type: ignore
 from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity, MessageType
@@ -9,25 +9,26 @@ from super_glass_lsp.lsp.custom.config_definitions import (
     OutputParsingConfig,
     LSPFeature,
 )
-from super_glass_lsp.lsp.custom.features import Feature
+from super_glass_lsp.lsp.custom.features import Feature, Debounced
 
 
 class Diagnoser(Feature):
-    # TODO: test as e2e
     def run(self, text_doc_uri: str) -> None:
         if self.server.configuration is None:
             return
 
-        document = self.server.workspace.get_document(text_doc_uri)
+        document = self.get_document_from_uri(text_doc_uri)
 
         configs = self.server.custom.get_all_config_by(
             LSPFeature.diagnostic, document.language_id
         )
-        for _id, config in configs.items():
+        for id, config in configs.items():
+            self.config_id = id
             self.config = config
             if document.language_id == config.language_id:
                 diagnostics = self.diagnose(text_doc_uri, config)
-                self.server.publish_diagnostics(document.uri, diagnostics)
+                if not isinstance(diagnostics, Debounced):
+                    self.server.publish_diagnostics(document.uri, diagnostics)
 
     def build_diagnostic_object(
         self, message: str, line: int = 0, col: int = 0, severity: str = ""
@@ -127,7 +128,7 @@ class Diagnoser(Feature):
 
     def run_cli_tool(
         self, command: str, text_doc_uri: str, use_stdout: Optional[bool] = False
-    ) -> str:
+    ) -> Union[str, Debounced]:
         output = ""
         extra_args = {
             # Rather confusingly, some linters successfully show their diagnostics but exit
@@ -137,18 +138,25 @@ class Diagnoser(Feature):
         }
         result = self.shell(command, text_doc_uri, extra_args)
 
-        if use_stdout and result.stdout is not None:
-            output = result.stdout.strip()
+        if not isinstance(result, Debounced):
+            if use_stdout and result.stdout is not None:
+                output = result.stdout.strip()
 
-        if not use_stdout and result.stderr is not None:
-            output = result.stderr.strip()
+            if not use_stdout and result.stderr is not None:
+                output = result.stderr.strip()
 
         return output
 
-    def diagnose(self, text_doc_uri: str, config: Config) -> List[Diagnostic]:
+    def diagnose(
+        self, text_doc_uri: str, config: Config
+    ) -> Union[List[Diagnostic], Debounced]:
         diagnostics: List[Diagnostic] = []
 
         output = self.run_cli_tool(config.command, text_doc_uri, config.stdout)
+
+        if isinstance(output, Debounced):
+            return output
+
         if not output:
             return diagnostics
 
