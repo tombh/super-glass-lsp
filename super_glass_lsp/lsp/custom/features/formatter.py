@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pygls.lsp.types import (
     Position,
@@ -10,24 +10,25 @@ from pygls.lsp.types import (
 )
 
 from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.features import Feature
+from super_glass_lsp.lsp.custom.features import Feature, Debounced
 
 SuperGlassFormatResult = Optional[List[TextEdit]]
 
 
 class Formatter(Feature):
     def run(self, text_doc_uri: str) -> SuperGlassFormatResult:
-        document = self.server.workspace.get_document(text_doc_uri)
+        document = self.get_document_from_uri(text_doc_uri)
         configs = self.server.custom.get_all_config_by(
             LSPFeature.formatter, document.language_id
         )
 
         edit: SuperGlassFormatResult = None
-        for _id, config in configs.items():
+        for id, config in configs.items():
+            self.config_id = id
             self.config = config
             if document.language_id == config.language_id:
                 new_text = self.run_cli_tool(config.command, text_doc_uri)
-                if new_text != "":
+                if not isinstance(new_text, Debounced) and new_text != "":
                     edit = self.new_text_to_textedit(new_text)
         return edit
 
@@ -53,6 +54,8 @@ class Formatter(Feature):
         self,
         command: str,
         text_doc_uri: str,
-    ) -> str:
+    ) -> Union[str, Debounced]:
         result = self.shell(command, text_doc_uri)
+        if isinstance(result, Debounced):
+            return result
         return result.stdout.strip()

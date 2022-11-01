@@ -30,7 +30,7 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
     actual = client.diagnostics[uri][0]
 
     assert actual == Diagnostic(
-        source="CustomLanguageServer",
+        source="jqlint",
         message="parse error: Expected value before ','",
         range=Range(
             start=Position(line=0, character=1),
