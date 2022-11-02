@@ -16,7 +16,7 @@ SuperGlassFormatResult = Optional[List[TextEdit]]
 
 
 class Formatter(Feature):
-    def run(self, text_doc_uri: str) -> SuperGlassFormatResult:
+    async def run(self, text_doc_uri: str) -> SuperGlassFormatResult:
         document = self.get_document_from_uri(text_doc_uri)
         configs = self.server.custom.get_all_config_by(
             LSPFeature.formatter, document.language_id
@@ -27,7 +27,7 @@ class Formatter(Feature):
             self.config_id = id
             self.config = config
             if document.language_id == config.language_id:
-                new_text = self.run_cli_tool(config.command, text_doc_uri)
+                new_text = await self.run_cli_tool(config.command, text_doc_uri)
                 if not isinstance(new_text, Debounced) and new_text != "":
                     edit = self.new_text_to_textedit(new_text)
                 if isinstance(new_text, Debounced):
@@ -52,12 +52,12 @@ class Formatter(Feature):
             )
         ]
 
-    def run_cli_tool(
+    async def run_cli_tool(
         self,
         command: str,
         text_doc_uri: str,
     ) -> Union[str, Debounced]:
-        result = self.shell(command, text_doc_uri)
+        result = await self.shell(command, text_doc_uri)
         if isinstance(result, Debounced):
             return result
         return result.stdout.strip()

@@ -1,17 +1,25 @@
 import pytest  # noqa
 
+from pygls.workspace import Document
+
 from super_glass_lsp.lsp.server import CustomLanguageServer
 from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
 from super_glass_lsp.lsp.custom.config_definitions import Config
+from super_glass_lsp.lsp.custom.features import SubprocessOutput
 
 
-def test_supplying_multiple_output_formatters(mocker):
+@pytest.mark.asyncio
+async def test_supplying_multiple_output_formatters(mocker):
     cli_output = "\n".join(
         ["stdin:1:2 all", "stdin:11 no col", "stdin just the message"]
     )
     mocker.patch(
-        "super_glass_lsp.lsp.custom.features.diagnoser.Diagnoser.run_cli_tool",
-        return_value=cli_output,
+        "super_glass_lsp.lsp.custom.features.Feature._subprocess_run",
+        return_value=SubprocessOutput("", cli_output),
+    )
+    mocker.patch(
+        "super_glass_lsp.lsp.custom.features.Feature.get_document_from_uri",
+        return_value=Document(language_id="testing", uri="file:///"),
     )
 
     server = CustomLanguageServer()
@@ -21,6 +29,7 @@ def test_supplying_multiple_output_formatters(mocker):
         "lsp_feature": "diagnostic",
         "language_id": "testing",
         "command": "",
+        "piped": False,
         "parsing": {
             "formats": [
                 "stdin:{line:d}:{col:d} {msg}",
@@ -29,9 +38,10 @@ def test_supplying_multiple_output_formatters(mocker):
             ]
         },
     }
-    config = Config(**config_from_client)
+    diagnoser.config_id = "test_supplying_multiple_output_formatters"
+    diagnoser.config = Config(**config_from_client)
 
-    diagnostics = diagnoser.diagnose("", config)
+    diagnostics = await diagnoser.diagnose("", diagnoser.config)
 
     assert len(diagnostics) == 3
 

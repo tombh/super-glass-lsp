@@ -108,7 +108,7 @@ async def did_change(params: DidChangeTextDocumentParams):
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didChange
     """
-    server.custom.did_change(params)
+    await server.custom.did_change(params)
 
 
 @server.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -140,11 +140,11 @@ async def did_open(params: DidOpenTextDocumentParams):
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didOpen
     """
-    server.custom.did_open(params)
+    await server.custom.did_open(params)
 
 
 @server.feature(COMPLETION)
-def completion(params: CompletionParams) -> Optional[CompletionList]:
+async def completion(params: CompletionParams) -> Optional[CompletionList]:
     """
     The Completion request is sent from the client to the server to compute completion
     items at a given cursor position.
@@ -191,14 +191,14 @@ def completion(params: CompletionParams) -> Optional[CompletionList]:
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
     """
-    return server.custom.completion_request(params)
+    return await server.custom.completion_request(params)
 
 
 @server.feature(
     FORMATTING,
     DocumentFormattingOptions(),
 )
-def formatting(params: DocumentFormattingParams) -> Optional[List[TextEdit]]:
+async def formatting(params: DocumentFormattingParams) -> Optional[List[TextEdit]]:
     """
     The document formatting request is sent from the client to the server to format a whole
     document.
@@ -234,7 +234,7 @@ def formatting(params: DocumentFormattingParams) -> Optional[List[TextEdit]]:
     ```
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_formatting
     """
-    return server.custom.formatting_request(params)
+    return await server.custom.formatting_request(params)
 
 
 @server.command(CUSTOM_SERVER_CONFIG_COMMAND)

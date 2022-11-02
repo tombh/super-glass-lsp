@@ -13,7 +13,7 @@ from super_glass_lsp.lsp.custom.features import Feature, Debounced
 
 
 class Diagnoser(Feature):
-    def run(self, text_doc_uri: str) -> None:
+    async def run(self, text_doc_uri: str) -> None:
         if self.server.configuration is None:
             return
 
@@ -26,7 +26,7 @@ class Diagnoser(Feature):
             self.config_id = id
             self.config = config
             if document.language_id == config.language_id:
-                diagnostics = self.diagnose(text_doc_uri, config)
+                diagnostics = await self.diagnose(text_doc_uri, config)
                 if not isinstance(diagnostics, Debounced):
                     self.server.publish_diagnostics(document.uri, diagnostics)
 
@@ -126,17 +126,11 @@ class Diagnoser(Feature):
 
         return self.build_diagnostic_object(message, line_number, col_number, severity)
 
-    def run_cli_tool(
+    async def run_cli_tool(
         self, command: str, text_doc_uri: str, use_stdout: Optional[bool] = False
     ) -> Union[str, Debounced]:
         output = ""
-        extra_args = {
-            # Rather confusingly, some linters successfully show their diagnostics but exit
-            # with a non-zero exit code.
-            # TODO: Grep for at least "command not found"
-            "check": False,
-        }
-        result = self.shell(command, text_doc_uri, extra_args)
+        result = await self.shell(command, text_doc_uri, check=False)
 
         if not isinstance(result, Debounced):
             if use_stdout and result.stdout is not None:
@@ -147,12 +141,12 @@ class Diagnoser(Feature):
 
         return output
 
-    def diagnose(
+    async def diagnose(
         self, text_doc_uri: str, config: Config
     ) -> Union[List[Diagnostic], Debounced]:
         diagnostics: List[Diagnostic] = []
 
-        output = self.run_cli_tool(config.command, text_doc_uri, config.stdout)
+        output = await self.run_cli_tool(config.command, text_doc_uri, config.stdout)
 
         if isinstance(output, Debounced):
             return output

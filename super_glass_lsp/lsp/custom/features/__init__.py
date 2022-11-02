@@ -4,11 +4,18 @@ if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
 import time
-import subprocess
+import asyncio
+import psutil  # type: ignore
 
 from super_glass_lsp.lsp.custom.config_definitions import Config
 
 SubprocessArgs = Dict[str, Any]
+
+
+class SubprocessOutput:
+    def __init__(self, stdout: str, stderr: str):
+        self.stdout = stdout
+        self.stderr = stderr
 
 
 class Debounced:
@@ -52,12 +59,12 @@ class Feature:
         key = self._build_cache_key(text_doc_uri)
         return self.cache[key]
 
-    def shell(
+    async def shell(
         self,
         command: str,
         text_doc_uri: str,
-        extra_subprocess_args: SubprocessArgs = {},
-    ) -> Union[subprocess.CompletedProcess, Debounced]:
+        check: bool = True,
+    ) -> Union[SubprocessOutput, Debounced]:
         if self.config_id is None or self.config is None:
             raise Exception
 
@@ -67,43 +74,62 @@ class Feature:
         if text_doc_uri is not None:
             command = command.replace("{file}", text_doc_uri.replace("file://", ""))
 
-        subprocess_args: SubprocessArgs = {
-            "timeout": self.config.timeout,
-            "check": True,
-            "capture_output": True,
-            "text": True,
-        }
-        subprocess_args = {**subprocess_args, **extra_subprocess_args}
-
+        input = None
         if self.config is not None and self.config.piped and text_doc_uri is not None:
             document = self.get_document_from_uri(text_doc_uri)
-            subprocess_args["input"] = document.source
+            input = document.source
 
         debug = {
             "text_doc_uri": text_doc_uri,
             "tool_config": self.config,
-            "shell_config": subprocess_args,
         }
         self.server.logger.debug(f"subprocess.run() config: {debug}")
 
+        output = await self._subprocess_run(command, input, check)
+        return output
+
+    async def _subprocess_run(
+        self, command: str, input: Optional[str], check: bool = False
+    ) -> SubprocessOutput:
+        if self.config_id is None or self.config is None:
+            raise Exception
         try:
-            self.server.logger.debug(f"subprocess.run() command: {command}")
-            result = subprocess.run(["sh", "-c", command], **subprocess_args)
-            self.server.logger.debug(f"subprocess.run() STDOUT: {result.stdout}")
-            self.server.logger.debug(f"subprocess.run() STDERR: {result.stderr}")
-        except subprocess.TimeoutExpired:
+            self.server.logger.debug(f"Subprocess command: {command}")
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdin=asyncio.subprocess.PIPE if input is not None else None,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await asyncio.wait_for(
+                # TODO: Figure out the typing problem here. Is it a false negative?
+                process.communicate(input.encode() if input is not None else None),  # type: ignore
+                timeout=self.config.timeout,
+            )
+            output = SubprocessOutput(stdout.decode(), stderr.decode())
+            self.server.logger.debug(f"Subprocess STDOUT: {output.stdout}")
+            self.server.logger.debug(f"Subprocess STDERR: {output.stderr}")
+        except asyncio.TimeoutError:
             message = (
                 f"Timeout: `{command}` took longer than {self.config.timeout} seconds"
             )
             self.server.logger.warning(message)
             self.server.show_message(message)
-            result = subprocess.CompletedProcess("", returncode=1)
-        except subprocess.CalledProcessError as error:
-            message = f"Shell error for `{command}`: {error.stderr}"
+            if process.returncode is None:
+                self.server.logger.warning(
+                    f"Terminating subprocess: `{command}` (timed out)"
+                )
+                parent = psutil.Process(process.pid)
+                for child in parent.children(recursive=True):
+                    child.terminate()
+                parent.terminate()
+        if process.returncode is None:
+            raise Exception("Completed subprocess exited without return code")
+        if check and process.returncode > 0:
+            message = f"Subprocess error for `{command}`: {output.stderr}"
             self.server.logger.error(message)
             self.server.show_message(message)
-            result = subprocess.CompletedProcess("", returncode=1)
-        return result
+        return output
 
     def milliseconds_now(self):
         return time.time() * 1000
