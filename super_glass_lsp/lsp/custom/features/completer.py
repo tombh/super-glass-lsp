@@ -22,7 +22,9 @@ class Completer(Feature):
 
         self.cache: Dict[str, List[CompletionItem]] = {}
 
-    def run(self, uri: str, cursor_position: Position) -> Optional[CompletionList]:
+    async def run(
+        self, uri: str, cursor_position: Position
+    ) -> Optional[CompletionList]:
         if self.server.configuration is None:
             self.server.logger.warning(
                 "Received completion request without any server config"
@@ -39,7 +41,7 @@ class Completer(Feature):
             self.config_id = id
             self.server.logger.debug(f"Running completion request for: {id}: {config}")
             self.config = config
-            items = self.complete(uri, cursor_position)
+            items = await self.complete(uri, cursor_position)
             completions.extend(items)
 
         return CompletionList(
@@ -47,7 +49,7 @@ class Completer(Feature):
             items=completions,
         )
 
-    def complete(
+    async def complete(
         self, text_doc_uri: str, cursor_position: Position
     ) -> List[CompletionItem]:
         if self.config is None:
@@ -55,7 +57,7 @@ class Completer(Feature):
 
         word = self.get_word_under_cursor(text_doc_uri, cursor_position)
 
-        output = self.run_cli_tool(
+        output = await self.run_cli_tool(
             self.config.command, text_doc_uri, word, cursor_position
         )
 
@@ -70,7 +72,7 @@ class Completer(Feature):
 
         return items
 
-    def run_cli_tool(
+    async def run_cli_tool(
         self,
         command: str,
         text_doc_uri: str,
@@ -82,7 +84,7 @@ class Completer(Feature):
         command = command.replace("{cursor_line}", str(cursor_position.line))
         command = command.replace("{cursor_char}", str(cursor_position.character))
 
-        result = self.shell(command, text_doc_uri)
+        result = await self.shell(command, text_doc_uri)
         if isinstance(result, Debounced):
             return result
 
