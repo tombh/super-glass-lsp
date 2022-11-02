@@ -79,6 +79,11 @@ def default_config_test(id: str, executable: str, extension: str):
                 create_file(sample_file_path_full)
                 sample_file = open(sample_file_path_full)
                 config = Hub.load_default_config()
+                if "enabled" not in config["configs"][id] or not config["configs"][id]:
+                    raise Exception(
+                        f"Found a default config that isn't disabled: {id}.\n"
+                        "Probably just need to add `<<: *defaults`."
+                    )
                 language_id = config["configs"][id]["language_id"]
                 cs.client.notify_did_open(sample_uri, language_id, sample_file.read())
 

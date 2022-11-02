@@ -51,6 +51,7 @@ configs:
     command: "black -"
 
   flake8:
+    <<: *defaults
     lsp_feature: diagnostic
     language_id: python
     command: "flake8 --color never -"
