@@ -29,14 +29,6 @@ class Feature:
         self.config_id: Optional[str] = None
         self.config: Optional[Config] = None
 
-        self.cache: Dict[str, Any] = {}
-        """Cache"""
-
-        self.debounces: Dict[str, int] = {}
-        """
-        Storage for debounce timeouts
-        """
-
     @property
     def name(self):
         return self.config_id
@@ -53,11 +45,11 @@ class Feature:
 
     def set_cache(self, text_doc_uri: str, items: Any):
         key = self._build_cache_key(text_doc_uri)
-        self.cache[key] = items
+        self.server.cache[key] = items
 
     def get_cache(self, text_doc_uri: str) -> Any:
         key = self._build_cache_key(text_doc_uri)
-        return self.cache[key]
+        return self.server.cache[key]
 
     async def shell(
         self,
@@ -141,11 +133,11 @@ class Feature:
 
         key = self._build_cache_key(text_doc_uri)
 
-        if key not in self.debounces:
+        if key not in self.server.debounces:
             self._reset_debounce(key)
             return False
 
-        elapsed = self.milliseconds_now() - self.debounces[key]
+        elapsed = self.milliseconds_now() - self.server.debounces[key]
         if elapsed > self.config.debounce:
             self._reset_debounce(key)
             return False
@@ -154,4 +146,4 @@ class Feature:
         return True
 
     def _reset_debounce(self, key: str):
-        self.debounces[key] = self.milliseconds_now()
+        self.server.debounces[key] = self.milliseconds_now()

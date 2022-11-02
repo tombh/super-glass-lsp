@@ -20,8 +20,6 @@ class Completer(Feature):
     def __init__(self, server: "CustomLanguageServer"):
         super().__init__(server)
 
-        self.cache: Dict[str, List[CompletionItem]] = {}
-
     async def run(
         self, uri: str, cursor_position: Position
     ) -> Optional[CompletionList]:
