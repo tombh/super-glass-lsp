@@ -48,6 +48,28 @@ class CustomLanguageServer(pygls_server.LanguageServer):
         separate for educational purposes.
         """
 
+        self.debounces: Dict[str, int] = {}
+        """
+        Storage for debounce timeouts.
+
+        Often, but not always, it can be good to defer rapid requests on expensive code
+        to a single aggregate request in the future.
+
+        Diagnostics are a good candidate for debounces, as they're published as and when
+        they're generated, rather than as direct responses to editor requests.
+        """
+
+        self.cache: Dict[str, List[Any]] = {}
+        """
+        Storage for response caches.
+
+        Coupled with debouncing, it is sometimes necessary to reply to the editor with
+        the last known state, rather than either do more expensive work or return nothing.
+        Completion requests are a good example, as the editor always expects a direct and
+        immediate response. If the response is empty, it display an empty completion list.
+        Hence the value of caching.
+        """
+
     # TODO: Remove and put into `JsonRPCProtocol._handle_notification()`. See issue #227
     def add_feature(self, feature: str):
         """
