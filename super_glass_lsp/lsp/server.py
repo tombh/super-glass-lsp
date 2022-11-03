@@ -1,9 +1,9 @@
 import typing
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Any, List
 
 import logging
 
-from pygls.lsp.types import InitializeParams
+from pygls.lsp.types import InitializeParams, Diagnostic
 from pygls import server as pygls_server
 
 from .custom.hub import Hub as CustomFeatures
@@ -68,6 +68,17 @@ class CustomLanguageServer(pygls_server.LanguageServer):
         Completion requests are a good example, as the editor always expects a direct and
         immediate response. If the response is empty, it display an empty completion list.
         Hence the value of caching.
+        """
+
+        self.diagnostics: Dict[str, List[Diagnostic]] = {}
+        """
+        Keep track of current diagnostics.
+
+        It's reasonble that are various forms of diagnostics, each running in separate threads
+        or processes. If we allow each source of diagnostics to publish directly to the editor
+        then they will just clobber any other sources of diagnostics. Therefore, it is the server's
+        responsibility to collate and publish what it perceives to be the entire aggregated state
+        of diagnostics for a given file URI.
         """
 
     # TODO: Remove and put into `JsonRPCProtocol._handle_notification()`. See issue #227

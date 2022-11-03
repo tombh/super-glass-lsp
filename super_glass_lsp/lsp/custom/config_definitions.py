@@ -15,7 +15,7 @@ class OutputParsingConfig(BaseModel):
 
     @classmethod
     def default(cls):
-        return cls(formats=["{item}"])
+        return cls(formats=["{msg}"])
 
     formats: List[str] = Field()
     """

@@ -3,12 +3,13 @@ import pytest  # noqa
 import time
 
 from pygls.workspace import Document
-from pygls.lsp.types import Diagnostic, DiagnosticSeverity, Range, Position
 
 from super_glass_lsp.lsp.server import CustomLanguageServer
 from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
 from super_glass_lsp.lsp.custom.config_definitions import Config
 from super_glass_lsp.lsp.custom.features import SubprocessOutput
+
+from super_glass_lsp.lsp.custom.tests.utils import make_diagnostic
 
 
 @pytest.mark.asyncio
@@ -18,7 +19,7 @@ async def test_debounce_restricts(mocker):
         "super_glass_lsp.lsp.custom.features.Feature.get_document_from_uri",
         return_value=Document(language_id="testing", uri="file:///"),
     )
-    mock = mocker.patch(
+    shell = mocker.patch(
         "super_glass_lsp.lsp.custom.features.Feature._subprocess_run",
         return_value=SubprocessOutput(cli_output, ""),
     )
@@ -44,7 +45,7 @@ async def test_debounce_restricts(mocker):
     for _ in range(10):
         await diagnoser.run("")
 
-    assert mock.call_count == 1
+    assert shell.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -63,11 +64,12 @@ async def test_debounce_releases(mocker):
             SubprocessOutput("", "stdin all mooore"),
         ],
     )
-    publish = mocker.patch(
+    publisher = mocker.patch(
         "super_glass_lsp.lsp.server.CustomLanguageServer.publish_diagnostics"
     )
 
     server = CustomLanguageServer()
+    server.config = {}
     diagnoser = Diagnoser(server)
 
     config_from_client = {
@@ -80,39 +82,23 @@ async def test_debounce_releases(mocker):
             "formats": ["stdin {msg}"],
         },
     }
-    diagnoser.server.config = {config_id: Config(**config_from_client)}
+    config = {config_id: Config(**config_from_client)}
     mocker.patch(
         "super_glass_lsp.lsp.custom.hub.Hub.get_all_config_by",
-        return_value=diagnoser.server.config,
+        return_value=config,
     )
 
-    diagnostic1 = Diagnostic(
-        range=Range(
-            start=Position(line=0, character=0),
-            end=Position(line=0, character=1),
-        ),
-        message="all",
-        source=config_id,
-        severity=DiagnosticSeverity.Error,
-    )
-    await diagnoser.run("")
-    publish.assert_called_with(uri, [diagnostic1])
+    await diagnoser.run(uri)
+    diagnostic1 = make_diagnostic([0, 0, 0, 1], "all", config_id)
+    publisher.assert_called_with(uri, [diagnostic1])
 
     time.sleep(0.1)
 
-    diagnostic2 = Diagnostic(
-        range=Range(
-            start=Position(line=0, character=0),
-            end=Position(line=0, character=1),
-        ),
-        message="all different",
-        source=config_id,
-        severity=DiagnosticSeverity.Error,
-    )
-    await diagnoser.run("")
-    publish.assert_called_with(uri, [diagnostic2])
+    await diagnoser.run(uri)
+    diagnostic2 = make_diagnostic([0, 0, 0, 1], "all different", config_id)
+    publisher.assert_called_with(uri, [diagnostic2])
 
-    await diagnoser.run("")
-    publish.assert_called_with(uri, [])
+    await diagnoser.run(uri)
+    publisher.assert_called_with(uri, [])
 
     assert shell.call_count == 2
