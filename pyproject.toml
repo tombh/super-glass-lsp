@@ -25,6 +25,7 @@ pytest-mock = "^3.10.0"
 pytest-lsp = "^0.1.2"
 types-pyyaml = "^6.0.12"
 pytest-timeout = "^2.1.0"
+pytest-xdist = "^3.0.2"
 
 [tool.poetry.scripts]
 super-glass-lsp   = "super_glass_lsp.main:main"

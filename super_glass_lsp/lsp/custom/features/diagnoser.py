@@ -1,11 +1,13 @@
 import typing
-from typing import List, Optional, Dict, Union
+from typing import TYPE_CHECKING, List, Optional, Dict, Union
+
+if TYPE_CHECKING:
+    from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from parse import parse  # type: ignore
 from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity, MessageType
 
 from super_glass_lsp.lsp.custom.config_definitions import (
-    Config,
     OutputParsingConfig,
     LSPFeature,
 )
@@ -13,6 +15,9 @@ from super_glass_lsp.lsp.custom.features import Feature, Debounced
 
 
 class Diagnoser(Feature):
+    def __init__(self, server: "CustomLanguageServer"):
+        super().__init__(server)
+
     async def run(self, text_doc_uri: str) -> None:
         if self.server.configuration is None:
             return
@@ -26,9 +31,27 @@ class Diagnoser(Feature):
             self.config_id = id
             self.config = config
             if document.language_id == config.language_id:
-                diagnostics = await self.diagnose(text_doc_uri, config)
-                if not isinstance(diagnostics, Debounced):
-                    self.server.publish_diagnostics(document.uri, diagnostics)
+                results = await self.diagnose(text_doc_uri)
+                self.publish_results(text_doc_uri, results)
+
+    def publish_results(
+        self, text_doc_uri: str, results: Union[List[Diagnostic], Debounced]
+    ):
+        """
+        We need to prevent sibling diagnostics tools from clobbering each other
+        """
+        if not self.config_id:
+            raise Exception
+
+        if not isinstance(results, Debounced):
+            self.server.diagnostics[self.config_id] = results
+            self.server.publish_diagnostics(text_doc_uri, self._flatten())
+
+    def _flatten(self) -> List[Diagnostic]:
+        flattened: List[Diagnostic] = []
+        for _id, diagnostics in self.server.diagnostics.items():
+            flattened.extend(diagnostics)
+        return flattened
 
     def build_diagnostic_object(
         self, message: str, line: int = 0, col: int = 0, severity: str = ""
@@ -141,12 +164,15 @@ class Diagnoser(Feature):
 
         return output
 
-    async def diagnose(
-        self, text_doc_uri: str, config: Config
-    ) -> Union[List[Diagnostic], Debounced]:
+    async def diagnose(self, text_doc_uri: str) -> Union[List[Diagnostic], Debounced]:
+        if not self.config:
+            raise Exception
+
         diagnostics: List[Diagnostic] = []
 
-        output = await self.run_cli_tool(config.command, text_doc_uri, config.stdout)
+        output = await self.run_cli_tool(
+            self.config.command, text_doc_uri, self.config.stdout
+        )
 
         if isinstance(output, Debounced):
             return output
@@ -155,7 +181,7 @@ class Diagnoser(Feature):
             return diagnostics
 
         for line in output.splitlines():
-            diagnostic = self.parse_line(config.parsing, line, config.command)
+            diagnostic = self.parse_line(self.config.parsing, line, self.config.command)
             diagnostics.append(diagnostic)
 
         return diagnostics
