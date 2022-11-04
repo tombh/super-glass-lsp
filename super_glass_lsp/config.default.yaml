@@ -28,8 +28,10 @@ configs:
     <<: *defaults
     lsp_feature: diagnostic
     language_id: python
-    # `--follow-imports=silent` means that Mypy _does_ check the entire codebase, but _doesn't_ output
+    # NB: `--follow-imports=silent` means that Mypy _does_ check the entire codebase, but _doesn't_ output
     # errors outside the current file.
+    # TODO: Look into https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-shadow-file
+    # That will allow buffer updates rather than just on-disk changes to trigger diagnostics
     command: |
       mypy \
         --no-color-output \
@@ -48,6 +50,8 @@ configs:
     <<: *defaults
     lsp_feature: formatter
     language_id: python
+    # TODO: look into adding a `black` diagnostic tool
+    # Because it turns out black reports parseable diagnostic lines when it can't parse a file!
     command: "black -"
 
   flake8:

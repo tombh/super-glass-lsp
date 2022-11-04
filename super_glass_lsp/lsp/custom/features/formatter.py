@@ -1,4 +1,7 @@
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional
+
+if TYPE_CHECKING:
+    from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from pygls.lsp.types import (
     Position,
@@ -10,28 +13,45 @@ from pygls.lsp.types import (
 )
 
 from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.features import Feature, Debounced
+from super_glass_lsp.lsp.custom.features._feature import Feature
+from super_glass_lsp.lsp.custom.features._debounce import Debounce
 
 SuperGlassFormatResult = Optional[List[TextEdit]]
 
 
 class Formatter(Feature):
-    async def run(self, text_doc_uri: str) -> SuperGlassFormatResult:
-        document = self.get_document_from_uri(text_doc_uri)
-        configs = self.server.custom.get_all_config_by(
-            LSPFeature.formatter, document.language_id
-        )
+    @classmethod
+    async def run_all(
+        cls, server: "CustomLanguageServer", text_doc_uri: str
+    ) -> SuperGlassFormatResult:
+        configs = Feature.get_configs(server, text_doc_uri, LSPFeature.formatter)
 
         edit: SuperGlassFormatResult = None
         for id, config in configs.items():
-            self.config_id = id
-            self.config = config
-            if document.language_id == config.language_id:
-                new_text = await self.run_cli_tool(config.command, text_doc_uri)
-                if not isinstance(new_text, Debounced) and new_text != "":
-                    edit = self.new_text_to_textedit(new_text)
-                if isinstance(new_text, Debounced):
-                    self.server.show_message("Too many formatting requests")
+            formatter = cls(server, id, text_doc_uri)
+            if not formatter.debouncer.is_debounced():
+                edit = await formatter.run_one()
+            else:
+                server.show_message("Too many formatting requests")
+        return edit
+
+    def __init__(
+        self, server: "CustomLanguageServer", config_id: str, text_doc_uri: str
+    ):
+        super().__init__(server, config_id, text_doc_uri)
+
+        Debounce.init(
+            self.server,
+            config_id,
+            self.cache_key(),
+        )
+
+    async def run_one(self) -> SuperGlassFormatResult:
+        result = await self.shell()
+        new_text = result.stdout.strip()
+        # TODO: update the document with the new text so that each tool
+        # incrementaly applies its changes on top of the previous
+        edit = self.new_text_to_textedit(new_text)
         return edit
 
     def new_text_to_textedit(self, new_text: str) -> SuperGlassFormatResult:
@@ -51,13 +71,3 @@ class Formatter(Feature):
                 new_text=new_text,
             )
         ]
-
-    async def run_cli_tool(
-        self,
-        command: str,
-        text_doc_uri: str,
-    ) -> Union[str, Debounced]:
-        result = await self.shell(command, text_doc_uri)
-        if isinstance(result, Debounced):
-            return result
-        return result.stdout.strip()
