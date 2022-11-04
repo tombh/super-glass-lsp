@@ -11,6 +11,7 @@ from pygls.lsp.types import DiagnosticSeverity
 
 from . import default_config_test, wait_for_diagnostic_count
 
+
 @default_config_test("flake8", "python", "py")
 async def test_flake8(client: Client, file_path: str, uri: str):
     good = """a = 1\n"""
@@ -27,9 +28,7 @@ async def test_flake8(client: Client, file_path: str, uri: str):
 
     actual = client.diagnostics[uri][0]
 
-    message = (
-        "E999 SyntaxError: invalid syntax"
-    )
+    message = "E999 SyntaxError: invalid syntax"
     assert actual == Diagnostic(
         source="flake8",
         message=message,

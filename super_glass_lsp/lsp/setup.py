@@ -84,7 +84,7 @@ def on_initialize(params: InitializeParams):
     server.initialize(params)
 
 
-# TODO: Thinka about how and where to explain the differences between notifications and requests
+# TODO: Think about how and where to explain the differences between notifications and requests
 @server.feature(TEXT_DOCUMENT_DID_CHANGE)
 async def did_change(params: DidChangeTextDocumentParams):
     """
@@ -107,6 +107,9 @@ async def did_change(params: DidChangeTextDocumentParams):
     ```
 
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_didChange
+
+    Note that this is one of the bundled, compulsary, default features that Pygls
+    always calls whether we define our own method or not.
     """
     await server.custom.did_change(params)
 

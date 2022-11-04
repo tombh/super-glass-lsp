@@ -84,21 +84,19 @@ class Hub:
         self.server.logger.debug(f"Final merged config: {self.server.config}")
 
     async def did_change(self, params: DidChangeTextDocumentParams):
-        diagnoser = Diagnoser(self.server)
-        await diagnoser.run(params.text_document.uri)
+        await Diagnoser.run_all(self.server, params.text_document.uri)
 
     async def did_open(self, params: DidOpenTextDocumentParams):
-        diagnoser = Diagnoser(self.server)
-        await diagnoser.run(params.text_document.uri)
+        await Diagnoser.run_all(self.server, params.text_document.uri)
 
     async def completion_request(
         self, params: CompletionParams
     ) -> Optional[CompletionList]:
-        completer = Completer(self.server)
-        return await completer.run(params.text_document.uri, params.position)
+        return await Completer.run_all(
+            self.server, params.text_document.uri, params.position
+        )
 
     async def formatting_request(
         self, params: DocumentFormattingParams
     ) -> SuperGlassFormatResult:
-        formatter = Formatter(self.server)
-        return await formatter.run(params.text_document.uri)
+        return await Formatter.run_all(self.server, params.text_document.uri)

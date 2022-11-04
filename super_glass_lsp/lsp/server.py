@@ -14,6 +14,8 @@ from .custom.config_definitions import (
     InitializationOptions as CustomInitializationOptions,
 )
 
+from .custom.features._debounce import Debounce
+
 Config = Optional[Union[CustomInitializationOptions, CustomConfig]]
 """
 Illustrative that although initialization options and general config might be structurally similar,
@@ -48,9 +50,9 @@ class CustomLanguageServer(pygls_server.LanguageServer):
         separate for educational purposes.
         """
 
-        self.debounces: Dict[str, int] = {}
+        self.debounces: Dict[str, Debounce] = {}
         """
-        Storage for debounce timeouts.
+        Storage for debounce data.
 
         Often, but not always, it can be good to defer rapid requests on expensive code
         to a single aggregate request in the future.
@@ -126,3 +128,6 @@ class CustomLanguageServer(pygls_server.LanguageServer):
     ) -> Optional[Config]:
         """Return the server's actual configuration."""
         return self.config
+
+    def get_document_from_uri(self, uri: str):
+        return self.workspace.get_document(uri)

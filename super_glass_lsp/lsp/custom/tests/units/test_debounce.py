@@ -1,104 +1,110 @@
 import pytest  # noqa
 
 import time
+import asyncio
 
-from pygls.workspace import Document
-
-from super_glass_lsp.lsp.server import CustomLanguageServer
 from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
-from super_glass_lsp.lsp.custom.config_definitions import Config
-from super_glass_lsp.lsp.custom.features import SubprocessOutput
+from super_glass_lsp.lsp.custom.features._subprocess import SubprocessOutput
 
 from super_glass_lsp.lsp.custom.tests.utils import make_diagnostic
+
+from ._utils import create_server
 
 
 @pytest.mark.asyncio
 async def test_debounce_restricts(mocker):
-    cli_output = "\n".join(["stdin all"])
-    mocker.patch(
-        "super_glass_lsp.lsp.custom.features.Feature.get_document_from_uri",
-        return_value=Document(language_id="testing", uri="file:///"),
-    )
-    shell = mocker.patch(
-        "super_glass_lsp.lsp.custom.features.Feature._subprocess_run",
-        return_value=SubprocessOutput(cli_output, ""),
-    )
-
-    server = CustomLanguageServer()
-    diagnoser = Diagnoser(server)
-
-    config_from_client = {
-        "lsp_feature": "diagnostic",
-        "language_id": "testing",
-        "command": "",
-        "piped": False,
-        "parsing": {
-            "formats": ["stdin {msg}"],
+    outputs = [
+        SubprocessOutput("", "1"),
+    ]
+    config = {
+        "config1": {
+            "lsp_feature": "diagnostic",
+            "language_id": "testing",
         },
     }
-    diagnoser.server.config = {"test_debounce_restricts": Config(**config_from_client)}
-    mocker.patch(
-        "super_glass_lsp.lsp.custom.hub.Hub.get_all_config_by",
-        return_value=diagnoser.server.config,
+    server, uri, subprocess_mock = create_server(
+        mocker,
+        config,
+        outputs,
     )
 
     for _ in range(10):
-        await diagnoser.run("")
+        await Diagnoser.run_all(server, uri)
 
-    assert shell.call_count == 1
+    assert subprocess_mock.call_count == 1
 
 
 @pytest.mark.asyncio
 async def test_debounce_releases(mocker):
-    uri = "file:///"
-    config_id = "test_debounce_releases"
-    mocker.patch(
-        "super_glass_lsp.lsp.custom.features.Feature.get_document_from_uri",
-        return_value=Document(language_id="testing", uri=uri),
-    )
-    shell = mocker.patch(
-        "super_glass_lsp.lsp.custom.features.Feature._subprocess_run",
-        side_effect=[
-            SubprocessOutput("", "stdin all"),
-            SubprocessOutput("", "stdin all different"),
-            SubprocessOutput("", "stdin all mooore"),
-        ],
-    )
-    publisher = mocker.patch(
-        "super_glass_lsp.lsp.server.CustomLanguageServer.publish_diagnostics"
-    )
-
-    server = CustomLanguageServer()
-    server.config = {}
-    diagnoser = Diagnoser(server)
-
-    config_from_client = {
-        "lsp_feature": "diagnostic",
-        "language_id": "testing",
-        "command": "",
-        "piped": False,
-        "debounce": 50,
-        "parsing": {
-            "formats": ["stdin {msg}"],
+    outputs = [
+        SubprocessOutput("", "all"),
+        SubprocessOutput("", "all different"),
+        SubprocessOutput("", "all moore"),
+    ]
+    config = {
+        "config1": {
+            "lsp_feature": "diagnostic",
+            "language_id": "testing",
+            "debounce": 50,
         },
     }
-    config = {config_id: Config(**config_from_client)}
-    mocker.patch(
-        "super_glass_lsp.lsp.custom.hub.Hub.get_all_config_by",
-        return_value=config,
+    server, uri, subprocess_mock = create_server(
+        mocker,
+        config,
+        outputs,
     )
 
-    await diagnoser.run(uri)
-    diagnostic1 = make_diagnostic([0, 0, 0, 1], "all", config_id)
-    publisher.assert_called_with(uri, [diagnostic1])
+    await Diagnoser.run_all(server, uri)
+    diagnostics = server.diagnostics["config1"]
+    assert diagnostics[0] == make_diagnostic([0, 0, 0, 1], "all", "config1")
 
     time.sleep(0.1)
 
-    await diagnoser.run(uri)
-    diagnostic2 = make_diagnostic([0, 0, 0, 1], "all different", config_id)
-    publisher.assert_called_with(uri, [diagnostic2])
+    await Diagnoser.run_all(server, uri)
+    diagnostics = server.diagnostics["config1"]
+    assert diagnostics[0] == make_diagnostic([0, 0, 0, 1], "all different", "config1")
 
-    await diagnoser.run(uri)
-    publisher.assert_called_with(uri, [])
+    time.sleep(0)
 
-    assert shell.call_count == 2
+    await Diagnoser.run_all(server, uri)
+    diagnostics = server.diagnostics["config1"]
+    assert diagnostics[0] == make_diagnostic([0, 0, 0, 1], "all different", "config1")
+
+    assert subprocess_mock.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_debounce_defers(mocker):
+    outputs = [
+        SubprocessOutput("", "all"),
+        SubprocessOutput("", "all different"),
+    ]
+    config = {
+        "config1": {
+            "lsp_feature": "diagnostic",
+            "language_id": "testing",
+            "debounce": 50,
+        },
+    }
+    server, uri, subprocess_mock = create_server(
+        mocker,
+        config,
+        outputs,
+    )
+
+    await Diagnoser.run_all(server, uri)
+    diagnostics = server.diagnostics["config1"]
+    assert diagnostics[0] == make_diagnostic([0, 0, 0, 1], "all", "config1")
+
+    time.sleep(0)
+
+    await Diagnoser.run_all(server, uri)
+    diagnostics = server.diagnostics["config1"]
+    assert diagnostics[0] == make_diagnostic([0, 0, 0, 1], "all", "config1")
+
+    await asyncio.sleep(0.1)
+
+    diagnostics = server.diagnostics["config1"]
+    assert diagnostics[0] == make_diagnostic([0, 0, 0, 1], "all different", "config1")
+
+    assert subprocess_mock.call_count == 2

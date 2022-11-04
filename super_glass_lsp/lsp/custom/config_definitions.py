@@ -104,7 +104,7 @@ class Config(ConfigBasic):
     How long to let the subprocess run before killing it
     """
 
-    debounce: Optional[int] = Field(1000)
+    debounce: int = Field(1000)
     """
     Minimum time in milliseconds between calls to command
     """
@@ -115,7 +115,7 @@ class Config(ConfigBasic):
     """Config for the output of config commands"""
 
 
-class Configs:
+class Configs(BaseModel):
     configs: Dict[str, Config] = Field()
     """
     Parent field for all configs.
