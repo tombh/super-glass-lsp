@@ -26,12 +26,13 @@ async def test_formatter_debounce(mocker):
             }
         },
         outputs,
+        ""
     )
 
     expected = TextEdit(
         range=Range(
             start=Position(line=0, character=0),
-            end=Position(line=2, character=0),
+            end=Position(line=0, character=0),
         ),
         new_text=outputs[0].stdout,
     )
@@ -46,7 +47,7 @@ async def test_formatter_debounce(mocker):
     expected = TextEdit(
         range=Range(
             start=Position(line=0, character=0),
-            end=Position(line=2, character=0),
+            end=Position(line=0, character=0),
         ),
         new_text=outputs[1].stdout,
     )
