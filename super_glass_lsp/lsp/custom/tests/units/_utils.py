@@ -9,11 +9,16 @@ from super_glass_lsp.lsp.custom.config_definitions import Configs
 from super_glass_lsp.lsp.server import CustomLanguageServer
 
 
-def create_server(mocker, configs: Dict, outputs: Optional[List[str]] = None):
+def create_server(
+    mocker,
+    configs: Dict,
+    outputs: Optional[List[str]] = None,
+    source: Optional[str] = "",
+):
     uri = "file:///"
     mocker.patch(
         "super_glass_lsp.lsp.server.CustomLanguageServer.get_document_from_uri",
-        return_value=Document(language_id="testing", uri=uri),
+        return_value=Document(language_id="testing", uri=uri, source=source),
     )
 
     mocker.patch(
