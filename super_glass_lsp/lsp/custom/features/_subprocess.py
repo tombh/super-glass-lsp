@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Dict, Any, Optional
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
+import os
 import asyncio
 import psutil  # type: ignore
 
@@ -28,6 +29,7 @@ class Subprocess:
         input: Optional[str],
         check: bool = False,
     ) -> SubprocessOutput:
+        new_env = os.environ.copy() | config.env
         try:
             server.logger.debug(f"Subprocess command: {command}")
             process = await asyncio.create_subprocess_shell(
@@ -35,6 +37,7 @@ class Subprocess:
                 stdin=asyncio.subprocess.PIPE if input is not None else None,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=new_env,
             )
             stdout, stderr = await asyncio.wait_for(
                 # TODO: Figure out the typing problem here. Is it a false negative?
