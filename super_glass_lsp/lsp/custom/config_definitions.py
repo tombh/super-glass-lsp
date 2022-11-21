@@ -84,6 +84,11 @@ class Config(ConfigBasic):
     The command to run, eg; `"jsonlint --strict"`
     """
 
+    env: Dict = Field({})
+    """
+    Extra environment variables to pass to the shell
+    """
+
     piped: bool = Field(True)
     """
     Whether to pipe the current text document into the command's STDIN
