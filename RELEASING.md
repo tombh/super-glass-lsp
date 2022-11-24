@@ -2,7 +2,7 @@
 
 ## Release Commands
 
-* `python build`
+* `poetry build`
 * `poetry publish --username tombh --password "$PYPI_PASSWORD"`
 
 ## TODO

@@ -1,6 +1,7 @@
 import typing
 from typing import Dict, Optional, Union, Any, List
 
+from argparse import Namespace
 import logging
 
 from pygls.lsp.types import InitializeParams, Diagnostic
@@ -39,6 +40,9 @@ class CustomLanguageServer(pygls_server.LanguageServer):
 
         self.config: Config = None
         """The user's configuration."""
+
+        self.cli_args: Namespace = Namespace()
+        """Copy of CLI args"""
 
         self.logger = logger or logging.getLogger(__name__)
         """The base logger that should be used for all language server log entries."""

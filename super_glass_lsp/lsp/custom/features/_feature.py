@@ -4,8 +4,11 @@ from typing import TYPE_CHECKING, Dict, Any
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
-from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.config_definitions import Config
+from super_glass_lsp.lsp.custom.config_definitions import (
+    LSPFeature,
+    Config,
+    ShellCommand,
+)
 from ._subprocess import Subprocess, SubprocessOutput
 
 
@@ -26,7 +29,7 @@ class Feature:
         self.config: Config = Config(
             **typing.cast(Dict, server.configuration.configs[config_id].dict())
         )
-        self.command: str = self.config.command
+        self.command: ShellCommand = self.config.command
 
     @property
     def name(self):
@@ -59,6 +62,9 @@ class Feature:
         return self.server.cache[self.cache_key()]
 
     async def shell(self, check: bool = True) -> SubprocessOutput:
+        if isinstance(self.command, list):
+            raise Exception("Command arrays not suported")
+
         command = self.command.replace(
             "{file}", self.text_doc_uri.replace("file://", "")
         )

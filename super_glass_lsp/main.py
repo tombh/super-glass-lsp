@@ -2,18 +2,23 @@ import logging
 
 from super_glass_lsp.lsp.setup import server  # type: ignore
 
+LSP_SERVER_NAME = "Super Glass Generic"
+
 
 def main() -> None:
     from argparse import ArgumentParser
 
     from super_glass_lsp import __version__
 
-    parser = ArgumentParser(description="Super Glass Generic Language Server")
+    parser = ArgumentParser(description=f"{LSP_SERVER_NAME} Language Server")
 
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
     )
-    parser.add_argument("--logfile")
+    parser.add_argument("--logfile", help="Path to log file")
+
+    parser = server.custom.add_cli_args(parser)
+
     args = parser.parse_args()
 
     if args.logfile is not None:
@@ -26,7 +31,9 @@ def main() -> None:
     else:
         logging.basicConfig(level=logging.INFO)
 
-    print("Starting Super Glass LSP server on STDIO...")
+    server.cli_args = args
+
+    print(f"{LSP_SERVER_NAME} LSP server on STDIO...")
     server.start_io()  # type: ignore
 
 
