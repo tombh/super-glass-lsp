@@ -23,11 +23,6 @@ SERVER_CMD = [
 ]
 
 
-@pytest.fixture(autouse=True)
-def run_around_tests():
-    yield
-
-
 def lsp_client_server_for(id: str):
     root_uri = uri.from_fs_path(str(ROOT_PATH))
 

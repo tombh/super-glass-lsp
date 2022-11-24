@@ -3,6 +3,8 @@ from enum import Enum, auto
 
 from pydantic import BaseModel, Field
 
+ShellCommand = Union[str, List[str]]
+
 
 class AutoName(Enum):
     def _generate_next_value_(name, start, count, last_values):
@@ -40,6 +42,8 @@ class LSPFeature(AutoName):
     diagnostic = auto()
     completion = auto()
     formatter = auto()
+    workspace_edit = auto()
+    goto_definition = auto()
 
 
 class ConfigBasic(BaseModel):
@@ -50,7 +54,7 @@ class ConfigBasic(BaseModel):
     enabled: bool = Field()
     lsp_feature: Optional[LSPFeature] = Field()
     language_id: Optional[str] = Field()
-    command: Optional[str] = Field()
+    command: Optional[ShellCommand] = Field()
     piped: Optional[bool] = Field()
     stdout: Optional[bool] = Field()
     stderr: Optional[bool] = Field()
@@ -79,7 +83,7 @@ class Config(ConfigBasic):
     Must be a `language_id` recognised by LSP, eg; `json`, `python`, etc
     """
 
-    command: str = Field("true")
+    command: ShellCommand = Field("true")
     """
     The command to run, eg; `"jsonlint --strict"`
     """
@@ -133,7 +137,7 @@ class Configs(BaseModel):
 class InitializationOptions(BaseModel):
     """The initialization options we can expect to receive from a client."""
 
-    configs: Dict[str, Union[Config, ConfigBasic]] = Field()
+    configs: Dict[str, Union[Config, ConfigBasic]] = Field({})
     """
     Parent field for all configs.
 

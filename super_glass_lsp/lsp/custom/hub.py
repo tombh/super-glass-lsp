@@ -1,18 +1,18 @@
-import os
-import yaml  # type: ignore
-from mergedeep import merge  # type: ignore
-
 import typing
 from typing import TYPE_CHECKING, Optional, Dict
 
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
+import os
+from argparse import ArgumentParser
+
+import yaml  # type: ignore
+from mergedeep import merge  # type: ignore
 from pygls.lsp.types import (
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
 )
-
 from pygls.lsp import CompletionParams, CompletionList, DocumentFormattingParams
 
 from super_glass_lsp.lsp.custom import config_definitions
@@ -27,7 +27,8 @@ from super_glass_lsp.lsp.custom.features.formatter import (
     SuperGlassFormatResult,
 )
 
-DEFAULT_CONFIG_PATH = "../../config.default.yaml"
+DEFAULT_CONFIG_PATH = os.path.join("..", "..", "config.default.yaml")
+DEFAULT_APP_CONFIG_PATH = "apps"
 
 
 class Hub:
@@ -35,7 +36,14 @@ class Hub:
         self.server = server
 
     def initialize(self):
-        self.merge_config()
+        if "app" not in self.server.cli_args or self.server.cli_args.app is None:
+            self.merge_config()
+        else:
+            self.load_app_config(self.server.cli_args.app)
+
+    def add_cli_args(self, parser: ArgumentParser) -> ArgumentParser:
+        parser.add_argument("--app", help="Name of app config to run")
+        return parser
 
     def get_all_config_by(
         self, feature: LSPFeature, language: Optional[str]
@@ -58,12 +66,25 @@ class Hub:
 
     @classmethod
     def load_default_config(cls) -> Dict:
+        return Hub.load_config(DEFAULT_CONFIG_PATH)
+
+    @classmethod
+    def load_config(cls, file_path: str) -> Dict:
         dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, DEFAULT_CONFIG_PATH)
+        filename = os.path.join(dirname, file_path)
         file = open(filename)
         contents = file.read()
-        default_config_dict = yaml.load(contents, Loader=yaml.Loader)
-        return default_config_dict
+        config_dict = yaml.load(contents, Loader=yaml.Loader)
+        return config_dict
+
+    def load_app_config(self, name: str):
+        path = os.path.join(DEFAULT_APP_CONFIG_PATH, f"{name}.yaml")
+        config_dict = Hub.load_config(path)
+        self.server.config = config_definitions.Configs(
+            **typing.cast(Dict, config_dict)
+        )
+        self.server.logger.debug(f"App config loaded: {self.server.config}")
+        return config_dict
 
     def merge_config(self):
         default_config_raw = Hub.load_default_config()

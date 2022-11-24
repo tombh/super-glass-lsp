@@ -73,6 +73,9 @@ class Completer(Feature):
         word: str,
         cursor_position: Position,
     ) -> str:
+        if isinstance(self.command, list):
+            raise Exception("Command arrays not suported")
+
         # TODO: probably refactor into a list of Tuple pairs?
         self.command = self.command.replace("{word}", word)
         self.command = self.command.replace("{cursor_line}", str(cursor_position.line))
