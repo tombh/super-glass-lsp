@@ -30,7 +30,9 @@ class Completer(Feature):
         configs = server.custom.get_all_config_by(LSPFeature.completion, language_id)
         completions = []
         for id, config in configs.items():
-            if document.language_id == config.language_id:
+            if (
+                document.language_id == config.language_id
+            ):  # TODO: is this guard needed?
                 completer = cls(server, id, text_doc_uri)
                 server.logger.debug(f"Running completion request for: {id}: {config}")
                 if server.debounces[completer.cache_key()].is_debounced():
@@ -87,6 +89,8 @@ class Completer(Feature):
         return result.stdout.strip()
 
     def get_word_under_cursor(self, cursor_position: Position):
+        if self.text_doc_uri is None:
+            raise Exception
         doc = self.server.get_document_from_uri(self.text_doc_uri)
         word = doc.word_at_position(cursor_position)
         return word

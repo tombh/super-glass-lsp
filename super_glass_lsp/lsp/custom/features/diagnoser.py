@@ -88,7 +88,7 @@ class Diagnoser(Feature):
         if self.config.parsing is not None:
             config = self.config.parsing
         else:
-            # TODO: I think we're using 2 different defaults for emptpy formate now?
+            # TODO: I think we're using 2 different defaults for emptpy format now?
             config = OutputParsingConfig(**typing.cast(Dict, {"formats": ["{line}"]}))
 
         for format_string in config.formats:

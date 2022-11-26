@@ -39,8 +39,8 @@ async def test_flake8(client: Client, file_path: str, uri: str):
         severity=DiagnosticSeverity.Error,
     )
 
-    file = open(file_path, "w")
-    file.write(good)
+    with open(file_path, "w") as file:
+        file.write(good)
 
     # Undo the changes, we should see the diagnostic be removed.
     client.notify_did_change(uri, good)

@@ -19,7 +19,6 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
     # Change the file so that it's in the "bad" state, we should see a diagnostic
     # reporting the issue.
     bad = "{,}"
-    file = open(file_path, "w")
     with open(file_path, "w") as file:
         file.write(bad)
 
@@ -39,8 +38,8 @@ async def test_jq_linter(client: Client, file_path: str, uri: str):
         severity=DiagnosticSeverity.Error,
     )
 
-    file = open(file_path, "w")
-    file.write(good)
+    with open(file_path, "w") as file:
+        file.write(good)
 
     # Undo the changes, we should see the diagnostic be removed.
     client.notify_did_change(uri, good)

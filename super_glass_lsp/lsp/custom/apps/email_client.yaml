@@ -1,8 +1,6 @@
 version: 2
 
 defaults: &defaults
-  # This isn't mentioned in the LSP spec, so assume that most editors send `null`
-  language_id: mime
   # The "on" switch. This is the key requirement for making the editor/LSP client turn on
   # these features.
   root_markers: ["inbox.md"]
@@ -12,29 +10,28 @@ configs:
     <<: *defaults
     lsp_feature: workspace_edit
     # Period is optional. If it is set then Super Glass calls it every `period` amount of time.
-    # When not set, Super Glass only calls the command once at startup, and hopes that it
-    # itself will behave as a long-running daemon.
-    period: 5s
+    period: 5
     command: |
-      json="$(himalaya get_all)"
-      for i in `seq 0 10`
-      output=""
-      do
-        sender=$(echo "$json" | jq --raw-output ".data[$i].sender")
-        subject=$(echo "$json" | jq --raw-output ".data[$i].subject")
-        line="$subject from $sender [Reply] [Archive] [Delete]\n"
-        output="$output\n$line"
-      done
+      # json="$(himalaya get_all)"
+      # for i in `seq 0 10`
+      # output=""
+      # do
+      #   sender=$(echo "$json" | jq --raw-output ".data[$i].sender")
+      #   subject=$(echo "$json" | jq --raw-output ".data[$i].subject")
+      #   line="$subject from $sender [Reply] [Archive] [Delete]\n"
+      #   output="$output\n$line"
+      # done
+      output="🤓"
       echo "TextDocumentEdit {workspace_root}/inbox.md 0:0,0:0"
       echo "$output"
     parsing:
       formats:
         # `kind`: TextDocumentEdit | CreateFile | RenameFile | DeleteFile
         # `uri`: Text document URI
-        # `range` (only for TextDocumentEdit): start_line,start_char,end_line,end_char
+        # `range` (only for TextDocumentEdit): start_line,start_char:end_line,end_char
         # `text_edit`: All remaining lines
         # TODO: perhaps this could be made a default formatter?
-        - "{kind} {uri} {range}\n{text_edit}"
+        - "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}"
 
   inbox_buttons:
     <<: *defaults
