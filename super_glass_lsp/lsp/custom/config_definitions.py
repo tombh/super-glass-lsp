@@ -61,6 +61,7 @@ class ConfigBasic(BaseModel):
     timeout: Optional[int] = Field()
     debounce: Optional[int] = Field()
     parsing: Optional[OutputParsingConfig] = Field()
+    period: Optional[int] = Field()
 
 
 class Config(ConfigBasic):
@@ -122,6 +123,11 @@ class Config(ConfigBasic):
         default_factory=OutputParsingConfig.default
     )
     """Config for the output of config commands"""
+
+    period: Optional[int] = Field()
+    """
+    Automatically call this config from a long-lived daemon, every `period` seconds.
+    """
 
 
 class Configs(BaseModel):

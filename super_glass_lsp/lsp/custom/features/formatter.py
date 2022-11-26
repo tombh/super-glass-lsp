@@ -55,6 +55,8 @@ class Formatter(Feature):
         return edit
 
     def new_text_to_textedit(self, new_text: str) -> SuperGlassFormatResult:
+        if self.text_doc_uri is None:
+            raise Exception
         current_document = self.server.get_document_from_uri(self.text_doc_uri)
         end_line = len(current_document.lines)
         # NB:

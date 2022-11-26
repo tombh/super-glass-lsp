@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, Optional
 
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
@@ -14,7 +14,10 @@ from ._subprocess import Subprocess, SubprocessOutput
 
 class Feature:
     def __init__(
-        self, server: "CustomLanguageServer", config_id: str, text_doc_uri: str
+        self,
+        server: "CustomLanguageServer",
+        config_id: str,
+        text_doc_uri: Optional[str],
     ):
         if (
             server.configuration is None
@@ -24,7 +27,7 @@ class Feature:
 
         self.server = server
         self.config_id: str = config_id
-        self.text_doc_uri: str = text_doc_uri
+        self.text_doc_uri: Optional[str] = text_doc_uri
         # TODO: Would be better if we didn't have to do this typecasting
         self.config: Config = Config(
             **typing.cast(Dict, server.configuration.configs[config_id].dict())
@@ -65,9 +68,17 @@ class Feature:
         if isinstance(self.command, list):
             raise Exception("Command arrays not suported")
 
-        command = self.command.replace(
-            "{file}", self.text_doc_uri.replace("file://", "")
-        )
+        command = self.command
+
+        if self.text_doc_uri is not None:
+            command = command.replace(
+                "{file}", self.text_doc_uri.replace("file://", "")
+            )
+
+        if self.server.workspace is not None:
+            command = command.replace(
+                "{workspace_root}", self.server.workspace.root_path
+            )
 
         input = None
         if self.config.piped and self.text_doc_uri is not None:

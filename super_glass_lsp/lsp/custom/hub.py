@@ -26,6 +26,7 @@ from super_glass_lsp.lsp.custom.features.formatter import (
     Formatter,
     SuperGlassFormatResult,
 )
+from super_glass_lsp.lsp.custom.features.workspace_edit import WorkspaceEdit
 
 DEFAULT_CONFIG_PATH = os.path.join("..", "..", "config.default.yaml")
 DEFAULT_APP_CONFIG_PATH = "apps"
@@ -40,6 +41,8 @@ class Hub:
             self.merge_config()
         else:
             self.load_app_config(self.server.cli_args.app)
+
+        self.start_daemons()
 
     def add_cli_args(self, parser: ArgumentParser) -> ArgumentParser:
         parser.add_argument("--app", help="Name of app config to run")
@@ -103,6 +106,9 @@ class Hub:
         )
 
         self.server.logger.debug(f"Final merged config: {self.server.config}")
+
+    def start_daemons(self):
+        WorkspaceEdit.start_all_daemons(self.server)
 
     async def did_change(self, params: DidChangeTextDocumentParams):
         await Diagnoser.run_all(self.server, params.text_document.uri)
