@@ -34,7 +34,7 @@ class WorkspaceEdit(Feature):
         # TODO: think about how language IDs fit into Workspace Edits
         language_id = "*"
         configs = server.custom.get_all_config_by(
-            LSPFeature.workspace_edit, language_id
+            LSPFeature.workspace_edit, language_id, allow_missing_root_marker=True
         )
         for id, config in configs.items():
             if config.period is not None:
@@ -59,6 +59,8 @@ class WorkspaceEdit(Feature):
     async def run_once(
         self,
     ):
+        if not self.config.has_root_marker(self.server.custom.get_workspace_root()):
+            return
         result = await self.shell()
         output = result.stdout.strip()
         workspace_edit = self.build_workspace_edit(output)

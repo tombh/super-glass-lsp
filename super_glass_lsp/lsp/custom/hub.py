@@ -19,6 +19,7 @@ from super_glass_lsp.lsp.custom import config_definitions
 from super_glass_lsp.lsp.custom.config_definitions import (
     LSPFeature,
     Config,
+    ConfigBasic,
 )
 from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
 from super_glass_lsp.lsp.custom.features.completer import Completer
@@ -49,7 +50,10 @@ class Hub:
         return parser
 
     def get_all_config_by(
-        self, feature: LSPFeature, language: Optional[str]
+        self,
+        feature: LSPFeature,
+        language: Optional[str],
+        allow_missing_root_marker=False,
     ) -> Dict[str, Config]:
         if self.server.config is None:
             self.server.logger.warning("`server.config` not set")
@@ -58,14 +62,41 @@ class Hub:
         filtered_config: Dict[str, Config] = {}
         for id, config in self.server.config.configs.items():
             self.server.logger.debug(f"Got config: {[id, config]}")
-            # In order to fully use the type system it might be possible to do this with `TypeVar`
-            # See: https://stackoverflow.com/a/66700544
-            is_feature = config.lsp_feature == feature  # type: ignore
-            is_language = config.language_id == language  # type: ignore
-            if config.enabled and is_feature and is_language:
+            if self.is_config_usable(
+                config,
+                feature,
+                language,
+                allow_missing_root_marker=allow_missing_root_marker,
+            ):
                 filtered_config[id] = config  # type: ignore
 
         return filtered_config
+
+    def is_config_usable(
+        self,
+        config: ConfigBasic,
+        feature: LSPFeature,
+        language: Optional[str],
+        allow_missing_root_marker=False,
+    ) -> bool:
+        # In order to fully use the type system it might be possible to do this with `TypeVar`
+        # See: https://stackoverflow.com/a/66700544
+        is_feature_match = config.lsp_feature == feature  # type: ignore
+        is_language_match = config.language_id == language  # type: ignore
+        if not allow_missing_root_marker:
+            has_root_marker = config.has_root_marker(self.get_workspace_root())
+        else:
+            has_root_marker = True
+
+        return (
+            config.enabled
+            and is_feature_match
+            and is_language_match
+            and has_root_marker
+        )
+
+    def get_workspace_root(self):
+        return self.server.workspace.root_path
 
     @classmethod
     def load_default_config(cls) -> Dict:
