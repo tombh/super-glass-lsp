@@ -57,6 +57,9 @@ jobs:
         run: |
           echo "PYTEST AND CLIENT LOGS"
           poetry run python -m pytest -vvv --log-cli-level=DEBUG || true
+          echo
+          echo "========================================================"
           echo "SERVER LOGS"
+          echo "========================================================"
           cat ./lsp-server-test.log || echo "No log file"
 

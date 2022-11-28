@@ -12,6 +12,7 @@ from pygls.lsp.types import DiagnosticSeverity
 from . import default_config_test, wait_for_diagnostic_count
 
 
+@pytest.mark.timeout(11)
 @default_config_test("flake8", "python", "py")
 async def test_flake8(client: Client, file_path: str, uri: str):
     good = """a = 1\n"""
@@ -24,7 +25,7 @@ async def test_flake8(client: Client, file_path: str, uri: str):
 
     client.notify_did_change(uri, bad)
 
-    await wait_for_diagnostic_count(client, uri, 1)
+    await wait_for_diagnostic_count(client, uri, count=1, timeout=10)
 
     actual = client.diagnostics[uri][0]
 

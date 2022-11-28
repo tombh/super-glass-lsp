@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Union
 from enum import Enum, auto
+import os
 
 from pydantic import BaseModel, Field
 
@@ -54,6 +55,7 @@ class ConfigBasic(BaseModel):
     enabled: bool = Field()
     lsp_feature: Optional[LSPFeature] = Field()
     language_id: Optional[str] = Field()
+    root_markers: Optional[List[str]] = Field()
     command: Optional[ShellCommand] = Field()
     piped: Optional[bool] = Field()
     stdout: Optional[bool] = Field()
@@ -62,6 +64,14 @@ class ConfigBasic(BaseModel):
     debounce: Optional[int] = Field()
     parsing: Optional[OutputParsingConfig] = Field()
     period: Optional[int] = Field()
+
+    def has_root_marker(self, root: str) -> bool:
+        if self.root_markers is None:
+            return True
+        for root_marker in self.root_markers:
+            path = os.path.join(root, root_marker)
+            return os.path.exists(path)
+        return False
 
 
 class Config(ConfigBasic):
@@ -82,6 +92,15 @@ class Config(ConfigBasic):
     """
     The language that will trigger this config's behaviour.
     Must be a `language_id` recognised by LSP, eg; `json`, `python`, etc
+    """
+
+    root_markers: Optional[List[str]] = Field()
+    """
+    Similar to LSP root markers, in that they express a codnition upon which the server will run.
+    For examle the proyect has to contain a `package.json` file in its root.
+
+    This setting is different in that it is local to the server. So it can only enable/disable
+    individual configs, not the server itself.
     """
 
     command: ShellCommand = Field("true")

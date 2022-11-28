@@ -31,6 +31,11 @@ def create_server(
         side_effect=outputs,
     )
 
+    mocker.patch(
+        "super_glass_lsp.lsp.custom.hub.Hub.get_workspace_root",
+        return_value="",
+    )
+
     server = CustomLanguageServer()
     server.config = Configs(**typing.cast(Dict, {"configs": configs}))
     return server, uri, subprocess_mock
