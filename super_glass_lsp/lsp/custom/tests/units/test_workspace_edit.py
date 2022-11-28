@@ -24,7 +24,7 @@ async def test_workspace_edit_textedit(mocker):
     new_text = "😊"
     outputs = [
         SubprocessOutput(
-            "\n".join(["TextDocumentEdit text.txt 0:0,0:0", new_text]), ""
+            "\n".join(["TextDocumentEdit /text.txt 0:0,0:0", new_text]), ""
         ),
     ]
     server, _, _ = create_server(

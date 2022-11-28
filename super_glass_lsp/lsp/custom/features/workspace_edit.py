@@ -11,12 +11,11 @@ from parse import parse  # type: ignore
 
 from pygls.lsp.types import (
     WorkspaceEdit as WorkspaceEditRequest,
+    TextDocumentContentChangeEvent,
     TextDocumentEdit,
     TextDocumentIdentifier,
     MessageType,
     TextEdit,
-    Range,
-    Position,
 )
 
 from super_glass_lsp.lsp.custom.config_definitions import (
@@ -69,6 +68,11 @@ class WorkspaceEdit(Feature):
         self.server.logger.debug("Sending Workspace Edit")
         self.server.lsp.apply_edit(workspace_edit, f"{self.config_id} document update")
 
+        # TODO: I think this is a bug in Pygls that we're fixing?
+        edit = workspace_edit.document_changes[0].edits[0]  # type: ignore
+        change = TextDocumentContentChangeEvent(range=edit.range, text=edit.new_text)
+        self.get_current_document().apply_change(change)
+
     # TODO: Refactor with what Diagnoser is also doing
     def build_workspace_edit(self, output: str) -> Optional[WorkspaceEditRequest]:
         default_format = (
@@ -112,7 +116,8 @@ class WorkspaceEdit(Feature):
         if parsed is None:
             return None
 
-        uri = f"file:///{parsed['uri']}"
+        uri = f"file://{parsed['uri']}"
+        self.text_doc_uri = uri
 
         # TODO: if parsed["kind"] == "TextDocumentEdit" ...
 
@@ -122,13 +127,11 @@ class WorkspaceEdit(Feature):
             ),
             edits=[
                 TextEdit(
-                    range=Range(
-                        start=Position(
-                            line=parsed["start_line"], character=parsed["start_char"]
-                        ),
-                        end=Position(
-                            line=parsed["end_line"], character=parsed["end_char"]
-                        ),
+                    range=self.parse_range(
+                        parsed["start_line"],
+                        parsed["start_char"],
+                        parsed["end_line"],
+                        parsed["end_char"],
                     ),
                     new_text=parsed["text_edit"],
                 ),

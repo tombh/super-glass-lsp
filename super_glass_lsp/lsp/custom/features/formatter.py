@@ -4,11 +4,6 @@ if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from pygls.lsp.types import (
-    Position,
-    Range,
-)
-
-from pygls.lsp.types import (
     TextEdit,
 )
 
@@ -55,21 +50,9 @@ class Formatter(Feature):
         return edit
 
     def new_text_to_textedit(self, new_text: str) -> SuperGlassFormatResult:
-        if self.text_doc_uri is None:
-            raise Exception
-        current_document = self.server.get_document_from_uri(self.text_doc_uri)
-        end_line = len(current_document.lines)
-        # NB:
-        # `end_char` may need to use something like pygls.workspace.utf16_num_units(lines[-1])
-        # in order to handle wide characters. I have seen some weirdness like a single char
-        # being copied on every save. But it's hard to know what's going on behind the scenes.
-        end_char = 0
         return [
             TextEdit(
-                range=Range(
-                    start=Position(line=0, character=0),
-                    end=Position(line=end_line, character=end_char),
-                ),
+                range=self.range_for_whole_document(),
                 new_text=new_text,
             )
         ]
