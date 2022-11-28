@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Dict, Any, Optional
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
+from pygls.lsp.types import Range, Position
+
 from super_glass_lsp.lsp.custom.config_definitions import (
     LSPFeature,
     Config,
@@ -82,7 +84,7 @@ class Feature:
 
         input = None
         if self.config.piped and self.text_doc_uri is not None:
-            document = self.server.get_document_from_uri(self.text_doc_uri)
+            document = self.get_current_document()
             input = document.source
 
         debug = {
@@ -93,3 +95,34 @@ class Feature:
 
         output = await Subprocess.run(self.server, self.config, command, input, check)
         return output
+
+    def parse_range(
+        self, start_line: int, start_char: int, end_line: int, end_char: int
+    ):
+        if self.text_doc_uri is None:
+            raise Exception
+
+        if int(end_line) == -1:
+            current_document = self.get_current_document()
+            end_line = len(current_document.lines)
+
+        if int(end_char) == -1:
+            # NB:
+            # `end_char` may need to use something like pygls.workspace.utf16_num_units(lines[-1])
+            # in order to handle wide characters. I have seen some weirdness like a single char
+            # being copied on every save. But it's hard to know what's going on behind the scenes.
+            end_char = 0
+
+        return Range(
+            start=Position(line=start_line, character=start_char),
+            end=Position(line=end_line, character=end_char),
+        )
+
+    def range_for_whole_document(self):
+        return self.parse_range(0, 0, -1, -1)
+
+    def get_current_document(self):
+        if self.text_doc_uri is None:
+            raise Exception
+
+        return self.server.get_document_from_uri(self.text_doc_uri)

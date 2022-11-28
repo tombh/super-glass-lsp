@@ -22,16 +22,19 @@ configs:
       #   output="$output\n$line"
       # done
       output="🤓"
-      echo "TextDocumentEdit {workspace_root}/inbox.md 0:0,0:0"
+      echo "TextDocumentEdit {workspace_root}/inbox.md 0:0,-1:-1"
       echo "$output"
     parsing:
       formats:
         # `kind`: TextDocumentEdit | CreateFile | RenameFile | DeleteFile
         # `uri`: Text document URI
+        # Settting end_line and end_char each to `-1` signifies replacing the whole document
         # `range` (only for TextDocumentEdit): start_line,start_char:end_line,end_char
         # `text_edit`: All remaining lines
         # TODO: perhaps this could be made a default formatter?
         - "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}"
+        - "{kind} {uri} {new_name}"
+        - "{kind} {uri}"
 
   inbox_buttons:
     <<: *defaults
