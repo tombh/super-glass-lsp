@@ -67,15 +67,23 @@ class WorkspaceEdit(Feature):
 
     def send_workspace_edit(self, workspace_edit: WorkspaceEditRequest):
         self.server.logger.debug("Sending Workspace Edit")
-        self.server.lsp.apply_edit(workspace_edit, "label??")
+        self.server.lsp.apply_edit(workspace_edit, f"{self.config_id} document update")
 
     # TODO: Refactor with what Diagnoser is also doing
     def build_workspace_edit(self, output: str) -> Optional[WorkspaceEditRequest]:
-        if self.config.parsing is not None:
+        default_format = (
+            "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}"
+        )
+
+        if (
+            self.config.parsing is not None
+            and self.config.parsing != OutputParsingConfig.default()
+        ):
             config = self.config.parsing
         else:
-            # TODO: I think we're using 2 different defaults for emptpy format now?
-            config = OutputParsingConfig(**typing.cast(Dict, {"formats": ["{line}"]}))
+            config = OutputParsingConfig(
+                **typing.cast(Dict, {"formats": [default_format]})
+            )
 
         for format_string in config.formats:
             maybe_workspace_edit = self.parse_output(
@@ -104,11 +112,13 @@ class WorkspaceEdit(Feature):
         if parsed is None:
             return None
 
+        uri = f"file:///{parsed['uri']}"
+
         # TODO: if parsed["kind"] == "TextDocumentEdit" ...
 
         edit = TextDocumentEdit(
             text_document=TextDocumentIdentifier(
-                uri=parsed["uri"],
+                uri=uri,
             ),
             edits=[
                 TextEdit(
