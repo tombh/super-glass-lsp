@@ -30,4 +30,6 @@ async def test_inbox_loads(client: Client, uri: str, patched: MagicMock):
 
     args, _kwargs = calls[1]
     data = args[0]
-    assert data["params"]["edit"]["documentChanges"][0]["edits"][0]["newText"] == "🤓"
+    body = data["params"]["edit"]["documentChanges"][0]["edits"][0]["newText"]
+    assert "# Inbox" in body
+    assert "| Google" in body

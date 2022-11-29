@@ -29,7 +29,7 @@ class Subprocess:
         input: Optional[str],
         check: bool = False,
     ) -> SubprocessOutput:
-        new_env = os.environ.copy() | config.env
+        new_env = cls.update_env(config)
         try:
             server.logger.debug(f"Subprocess command: {command}")
             process = await asyncio.create_subprocess_shell(
@@ -66,3 +66,12 @@ class Subprocess:
             server.logger.error(message)
             server.show_message(message)
         return output
+
+    @classmethod
+    def update_env(cls, config: Config) -> Dict:
+        new_env = os.environ.copy() | config.env
+        if "PYTEST_CURRENT_TEST" in os.environ:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            test_binaries_path = os.path.join(dir_path, "../", "tests", "e2e", "_bin")
+            new_env["PATH"] = test_binaries_path + ":" + new_env["PATH"]
+        return new_env

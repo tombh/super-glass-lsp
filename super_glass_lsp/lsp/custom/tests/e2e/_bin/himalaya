@@ -1,0 +1,26 @@
+#!/bin/env sh
+
+cat <<EOT
+[
+   {
+      "id":"2",
+      "internal_id":"2",
+      "flags":[
+         "Seen"
+      ],
+      "subject":"Security alert",
+      "sender":"Google",
+      "date":"2022-11-29 13:47:46"
+   },
+   {
+      "id":"1",
+      "internal_id":"1",
+      "flags":[
+         "Seen"
+      ],
+      "subject":"Super, finish setting up your new Google Account",
+      "sender":"Google Community Team",
+      "date":"2022-11-29 13:22:31"
+   }
+]
+EOT
