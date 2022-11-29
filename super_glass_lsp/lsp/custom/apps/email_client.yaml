@@ -12,17 +12,22 @@ configs:
     # Period is optional. If it is set then Super Glass calls it every `period` amount of time.
     period: 5
     command: |
-      # json="$(himalaya get_all)"
-      # for i in `seq 0 10`
-      # output=""
-      # do
-      #   sender=$(echo "$json" | jq --raw-output ".data[$i].sender")
-      #   subject=$(echo "$json" | jq --raw-output ".data[$i].subject")
-      #   line="$subject from $sender [Reply] [Archive] [Delete]\n"
-      #   output="$output\n$line"
-      # done
-      output="🤓"
+      width=20
+      json="$(himalaya --output json list)"
+      count="$(echo $json | jq length)"
+      head1="    Subject          |        From          | View  |Archive|Delete "
+      head2="---------------------|----------------------|-------|-------|-------"
+      output="$head1\n$head2"
+      for i in `seq 0 "$((count - 1))"`
+      do
+        subject=$(echo "$json" | jq --raw-output ".[$i].subject" | head -c $width)
+        sender=$(echo "$json" | jq --raw-output ".[$i].sender" | head -c $width)
+        buttons="   📖  |   📥  |  ❌  "
+        line="$(printf '%-'$width's' "$subject") | $(printf '%-'$width's' "$sender") |$buttons"
+        output="$output\n$line"
+      done
       echo "TextDocumentEdit {workspace_root}/inbox.md 0:0,-1:-1"
+      echo "# Inbox\n"
       echo "$output"
     parsing:
       formats:

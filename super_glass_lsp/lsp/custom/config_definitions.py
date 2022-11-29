@@ -57,6 +57,7 @@ class ConfigBasic(BaseModel):
     language_id: Optional[str] = Field()
     root_markers: Optional[List[str]] = Field()
     command: Optional[ShellCommand] = Field()
+    env: Optional[Dict] = Field()
     piped: Optional[bool] = Field()
     stdout: Optional[bool] = Field()
     stderr: Optional[bool] = Field()

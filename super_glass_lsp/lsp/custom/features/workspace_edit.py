@@ -135,7 +135,7 @@ class WorkspaceEdit(Feature):
                         parsed["end_line"],
                         parsed["end_char"],
                     ),
-                    new_text=parsed["text_edit"],
+                    new_text=parsed["text_edit"].replace("\\n", "\n"),
                 ),
             ],
         )
