@@ -26,21 +26,17 @@ class Completer(Feature):
         cursor_position: Position,
     ) -> Optional[CompletionList]:
         language_id = server.get_document_from_uri(text_doc_uri).language_id
-        document = server.get_document_from_uri(text_doc_uri)
         configs = server.custom.get_all_config_by(LSPFeature.completion, language_id)
         completions = []
         for id, config in configs.items():
-            if (
-                document.language_id == config.language_id
-            ):  # TODO: is this guard needed?
-                completer = cls(server, id, text_doc_uri)
-                server.logger.debug(f"Running completion request for: {id}: {config}")
-                if server.debounces[completer.cache_key()].is_debounced():
-                    items = completer.get_cache()
-                else:
-                    items = await completer.complete(cursor_position)
-                    completer.set_cache(items)
-                completions.extend(items)
+            completer = cls(server, id, text_doc_uri)
+            server.logger.debug(f"Running completion request for: {id}: {config}")
+            if server.debounces[completer.cache_key()].is_debounced():
+                items = completer.get_cache()
+            else:
+                items = await completer.complete(cursor_position)
+                completer.set_cache(items)
+            completions.extend(items)
 
         return CompletionList(
             is_incomplete=True,
