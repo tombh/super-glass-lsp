@@ -137,6 +137,7 @@ class Feature:
             command = command.replace(
                 "{file}", self.text_doc_uri.replace("file://", "")
             )
+            command = command.replace("{uri}", self.text_doc_uri)
 
         if self.server.workspace is not None:
             command = command.replace(

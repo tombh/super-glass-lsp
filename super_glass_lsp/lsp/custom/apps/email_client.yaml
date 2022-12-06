@@ -1,6 +1,7 @@
 version: 2
 
 defaults: &defaults
+  timeout: 15
   # The "on" switch. This is the key requirement for making the editor/LSP client turn on
   # these features.
   root_markers: ["inbox.md"]
@@ -11,12 +12,11 @@ configs:
     lsp_feature: workspace_edit
     # Period is optional. If it is set then Super Glass calls it every `period` amount of time.
     period: 60
-    timeout: 15
     command: |
       width=18
       json="$(himalaya --output json list)"
       count="$(echo $json | jq length)"
-      head1=" ID |   Subject          |       From         |           Actions        "
+      head1=" ID |   Subject          |       From         |          Actions         "
       head2="----|--------------------|--------------------|--------------------------"
       output="$head1\n$head2"
       for i in `seq 0 "$((count - 1))"`
@@ -44,7 +44,7 @@ configs:
         - "{kind} {uri} {new_name}"
         - "{kind} {uri}"
 
-  inbox_buttons:
+  buttons:
     <<: *defaults
     lsp_feature: goto_definition
     command:
@@ -60,6 +60,10 @@ configs:
           echo "call read_email $id"
         fi
 
+        if [ "{word}" == "{Reply}" ]; then
+          echo "call reply_email"
+        fi
+
         if [ "{word}" == "{Archive}" ]; then
           echo "call archive_email $id"
         fi
@@ -73,7 +77,7 @@ configs:
         fi
 
         if [ "{word}" == "{Send}" ]; then
-          echo "call send_email new"
+          echo "call send_email"
         fi
       # * Here's a good candidate for "work progress end" notification
 
@@ -133,28 +137,51 @@ configs:
     <<: *defaults
     lsp_feature: workspace_edit
     piped: true # Isn't that default anyway
-    timeout: 15
     command: |
       cat - | sed -e 's/: Write the email after this line//' | tail -n +3 | himalaya send
-      echo "DeleteFile {workspace_root}/{args}.mime 0:0,0:0"
+      echo "DeleteFile {file} 0:0,0:0"
 
   reply_email:
     <<: *defaults
     lsp_feature: workspace_edit
+    # TODO: Move cussor to start of new email body
     command: |
-      # Create new email (shared code with new_email?) using quoted (>) body of existing email
-      # I think the reply body could be copied from the file, rather than re-downloading it?
-      # `cat inbox/{id}.mime > drafts/{id}.md | tee prepend >`
-      echo "TextDocumentEdit {workspace_root}/{args}.mime 0:0,0:0"
-      echo "$text"
+      text=$(cat -)
+      recipient=$(echo "$text" | grep "^To:" | sed -e 's/To: //')
+      sender=$(echo "$text" | grep "^From:" | sed -e 's/From: //')
+      subject=$(echo "$text" | grep "Subject" | sed -e 's/Subject: //')
+      history=$(
+        echo "$text" \
+          | tail -n +7 \
+          | while read line; do
+              echo "> $line";
+            done
+      )
+      echo "TextDocumentEdit {file} 0:0,-1:-1"
+      echo "{Send}"
+      echo ""
+      echo "From: $recipient"
+      echo "To: $sender"
+      echo "Subject: Re: $subject"
+      echo ": Write the email after this line"
+      echo ""
+      echo "$history"
 
   read_email:
     <<: *defaults
     lsp_feature: workspace_edit
     command: |
       touch {workspace_root}/{args}.mime
-      text="$(himalaya read {args})"
+      text="$(
+        himalaya read {args} \
+          --header Date \
+          --header To \
+          --header From \
+          --header Subject
+        )"
       echo "TextDocumentEdit {workspace_root}/{args}.mime 0:0,-1:-1"
+      echo "{Reply}"
+      echo ""
       echo "$text"
 
   archive_email:
@@ -177,28 +204,6 @@ configs:
         echo "call inbox"
       - |
         echo "DeleteFile {workspace_root}/{args}.mime 0:0,0:0"
-
-
-# Potential inbox.md
-#
-# Actions: [Reply] [Archive]
-#
-# MIME-Version: 1.0
-# Content-Type: multipart/mixed; boundary=frontier
-#
-# This is a message with multiple parts in MIME format.
-# --frontier
-# Content-Type: text/plain
-#
-# This is the body of the message.
-# --frontier
-# Content-Type: application/octet-stream
-# Content-Transfer-Encoding: base64
-#
-# PGh0bWw+CiAgPGhlYWQ+CiAgPC9oZWFkPgogIDxib2R5PgogICAgPHA+VGhpcyBpcyB0aGUg
-# Ym9keSBvZiB0aGUgbWVzc2FnZS48L3A+CiAgPC9ib2R5Pgo8L2h0bWw+Cg==
-# --frontier--
-#
 
 # Code Action design:
 #   inbox_actions:
