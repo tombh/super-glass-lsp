@@ -42,8 +42,11 @@ class Formatter(Feature):
         )
 
     async def run_one(self) -> SuperGlassFormatResult:
-        result = await self.shell()
-        new_text = result.stdout.strip()
+        if isinstance(self.command, list):
+            raise Exception("Formatters do not support multiple commands")
+
+        result = await self.shell(self.command, check=False)
+        new_text = result.stdout
         # TODO: update the document with the new text so that each tool
         # incrementaly applies its changes on top of the previous
         edit = self.new_text_to_textedit(new_text)

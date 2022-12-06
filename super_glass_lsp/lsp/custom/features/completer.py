@@ -55,7 +55,7 @@ class Completer(Feature):
         )
 
     async def complete(self, cursor_position: Position) -> List[CompletionItem]:
-        word = self.get_word_under_cursor(cursor_position)
+        word = self.get_wordish_under_cursor(cursor_position)
 
         output = await self.run_cli_tool(word, cursor_position)
 
@@ -72,21 +72,14 @@ class Completer(Feature):
         cursor_position: Position,
     ) -> str:
         if isinstance(self.command, list):
-            raise Exception("Command arrays not suported")
+            raise Exception("Completions do not support multiple commands")
+
+        command = self.command
 
         # TODO: probably refactor into a list of Tuple pairs?
-        self.command = self.command.replace("{word}", word)
-        self.command = self.command.replace("{cursor_line}", str(cursor_position.line))
-        self.command = self.command.replace(
-            "{cursor_char}", str(cursor_position.character)
-        )
+        command = command.replace("{word}", word)
+        command = command.replace("{cursor_line}", str(cursor_position.line))
+        command = command.replace("{cursor_char}", str(cursor_position.character))
 
-        result = await self.shell()
-        return result.stdout.strip()
-
-    def get_word_under_cursor(self, cursor_position: Position):
-        if self.text_doc_uri is None:
-            raise Exception
-        doc = self.server.get_document_from_uri(self.text_doc_uri)
-        word = doc.word_at_position(cursor_position)
-        return word
+        result = await self.shell(command)
+        return result.stdout

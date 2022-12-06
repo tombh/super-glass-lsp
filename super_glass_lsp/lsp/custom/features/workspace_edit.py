@@ -1,5 +1,5 @@
 import typing
-from typing import Optional, Dict, TYPE_CHECKING
+from typing import Optional, Dict, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
@@ -11,18 +11,18 @@ from parse import parse  # type: ignore
 
 from pygls.lsp.types import (
     WorkspaceEdit as WorkspaceEditRequest,
-    TextDocumentContentChangeEvent,
     TextDocumentEdit,
+    DeleteFile,
     TextDocumentIdentifier,
     MessageType,
     TextEdit,
 )
 
+from super_glass_lsp.lsp.custom.features._feature import Feature
 from super_glass_lsp.lsp.custom.config_definitions import (
     LSPFeature,
     OutputParsingConfig,
 )
-from super_glass_lsp.lsp.custom.features._feature import Feature
 
 
 class WorkspaceEdit(Feature):
@@ -56,30 +56,39 @@ class WorkspaceEdit(Feature):
         text_doc_uri = None  # TODO: think about what text_doc_uri means in this feature
         super().__init__(server, config_id, text_doc_uri)
 
-    async def run_once(
-        self,
-    ):
+    async def run_once(self, args: Optional[str] = None):
         if not self.config.has_root_marker(self.server.custom.get_workspace_root()):
             return
-        result = await self.shell()
-        output = result.stdout.strip()
-        workspace_edit = self.build_workspace_edit(output)
-        self.send_workspace_edit(workspace_edit)
+
+        replacements = []
+        if args:
+            replacements = [
+                ("{args}", args),
+            ]
+        commands = self.resolve_commands(replacements)
+        await self.run_pre_commands(commands)
+
+        if isinstance(commands, list):
+            final_command = commands[-1]
+        else:
+            final_command = commands
+        result = await self.shell(final_command)
+
+        workspace_edit = self.build_workspace_edit(result.stdout)
+        if workspace_edit is not None:
+            self.send_workspace_edit(workspace_edit)
 
     def send_workspace_edit(self, workspace_edit: WorkspaceEditRequest):
         self.server.logger.debug("Sending Workspace Edit")
         self.server.lsp.apply_edit(workspace_edit, f"{self.config_id} document update")
 
-        # TODO: I think this is a bug in Pygls that we're fixing?
-        edit = workspace_edit.document_changes[0].edits[0]  # type: ignore
-        change = TextDocumentContentChangeEvent(range=edit.range, text=edit.new_text)
-        self.get_current_document().apply_change(change)
-
     # TODO: Refactor with what Diagnoser is also doing
     def build_workspace_edit(self, output: str) -> Optional[WorkspaceEditRequest]:
-        default_format = (
-            "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}"
-        )
+        default_formats = [
+            "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}",
+            "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}",
+            "{kind} {uri}",
+        ]
 
         if (
             self.config.parsing is not None
@@ -88,7 +97,7 @@ class WorkspaceEdit(Feature):
             config = self.config.parsing
         else:
             config = OutputParsingConfig(
-                **typing.cast(Dict, {"formats": [default_format]})
+                **typing.cast(Dict, {"formats": default_formats})
             )
 
         for format_string in config.formats:
@@ -121,23 +130,31 @@ class WorkspaceEdit(Feature):
         uri = f"file://{parsed['uri']}"
         self.text_doc_uri = uri
 
-        # TODO: if parsed["kind"] == "TextDocumentEdit" ...
+        edit: Union[None, TextDocumentEdit, DeleteFile] = None
 
-        edit = TextDocumentEdit(
-            text_document=TextDocumentIdentifier(
-                uri=uri,
-            ),
-            edits=[
-                TextEdit(
-                    range=self.parse_range(
-                        parsed["start_line"],
-                        parsed["start_char"],
-                        parsed["end_line"],
-                        parsed["end_char"],
-                    ),
-                    new_text=parsed["text_edit"].replace("\\n", "\n"),
+        if parsed["kind"] == "TextDocumentEdit":
+            new_text = parsed["text_edit"].replace("\\n", "\n")
+            edit = TextDocumentEdit(
+                text_document=TextDocumentIdentifier(
+                    uri=uri,
                 ),
-            ],
-        )
-        # Also CreateFile, RenameFile, DeleteFile can go in the list
+                edits=[
+                    TextEdit(
+                        range=self.parse_range(
+                            parsed["start_line"],
+                            parsed["start_char"],
+                            parsed["end_line"],
+                            parsed["end_char"],
+                        ),
+                        new_text=new_text,
+                    ),
+                ],
+            )
+
+        if parsed["kind"] == "DeleteFile":
+            edit = DeleteFile(
+                uri=uri,
+            )
+
+        # Also CreateFile, RenameFile can go in the list
         return WorkspaceEditRequest(document_changes=[edit])

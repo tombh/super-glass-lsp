@@ -147,14 +147,17 @@ class Diagnoser(Feature):
         return self.build_diagnostic_object(message, line_number, col_number, severity)
 
     async def run_cli_tool(self) -> str:
+        if isinstance(self.command, list):
+            raise Exception("Diagnostics do not support multiple commands")
+
         output = ""
-        result = await self.shell(check=False)
+        result = await self.shell(self.command, check=False)
 
         if self.config.stdout and result.stdout is not None:
-            output = result.stdout.strip()
+            output = result.stdout
 
         if not self.config.stdout and result.stderr is not None:
-            output = result.stderr.strip()
+            output = result.stderr
 
         return output
 
