@@ -1,5 +1,5 @@
 import typing
-from typing import TYPE_CHECKING, Optional, Dict
+from typing import TYPE_CHECKING, Optional, Dict, List
 
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
@@ -12,8 +12,14 @@ from mergedeep import merge  # type: ignore
 from pygls.lsp.types import (
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
+    Location,
 )
-from pygls.lsp import CompletionParams, CompletionList, DocumentFormattingParams
+from pygls.lsp import (
+    CompletionParams,
+    CompletionList,
+    DocumentFormattingParams,
+    DefinitionParams,
+)
 
 from super_glass_lsp.lsp.custom import config_definitions
 from super_glass_lsp.lsp.custom.config_definitions import (
@@ -23,6 +29,7 @@ from super_glass_lsp.lsp.custom.config_definitions import (
 )
 from super_glass_lsp.lsp.custom.features.diagnoser import Diagnoser
 from super_glass_lsp.lsp.custom.features.completer import Completer
+from super_glass_lsp.lsp.custom.features.goto_definition import GotoDefinition
 from super_glass_lsp.lsp.custom.features.formatter import (
     Formatter,
     SuperGlassFormatResult,
@@ -82,7 +89,8 @@ class Hub:
         # In order to fully use the type system it might be possible to do this with `TypeVar`
         # See: https://stackoverflow.com/a/66700544
         is_feature_match = config.lsp_feature == feature  # type: ignore
-        is_language_match = config.language_id == language  # type: ignore
+        is_wild_language = config.language_id == "*"
+        is_language_match = config.language_id == language or is_wild_language  # type: ignore
         if not allow_missing_root_marker:
             has_root_marker = config.has_root_marker(self.get_workspace_root())
         else:
@@ -151,6 +159,13 @@ class Hub:
         self, params: CompletionParams
     ) -> Optional[CompletionList]:
         return await Completer.run_all(
+            self.server, params.text_document.uri, params.position
+        )
+
+    async def definition_request(
+        self, params: DefinitionParams
+    ) -> Optional[List[Location]]:
+        return await GotoDefinition.run_all(
             self.server, params.text_document.uri, params.position
         )
 

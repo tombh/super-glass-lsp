@@ -3,6 +3,9 @@ _🚧 WIP: you're very welcome to try this, but I'm breaking a lot at the moment
 # Super Glass
 ## Generic LSP Server and/or Pygls Starting Template
 
+> Hackable LSP
+> — @cathalogrady
+
 <img src="logo.png" align="left" />
 
 This project has 2 goals.

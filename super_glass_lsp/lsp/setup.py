@@ -1,8 +1,8 @@
 from typing import Optional, List
 
-from pygls.capabilities import COMPLETION
 from pygls.lsp import (
     CompletionParams,
+    DefinitionParams,
     CompletionList,
     DocumentFormattingOptions,
     DocumentFormattingParams,
@@ -12,12 +12,15 @@ from pygls.lsp.methods import (
     TEXT_DOCUMENT_DID_CHANGE,
     TEXT_DOCUMENT_DID_OPEN,
     FORMATTING,
+    COMPLETION,
+    DEFINITION,
 )
 from pygls.lsp.types import (
     DidChangeTextDocumentParams,
     DidOpenTextDocumentParams,
     InitializeParams,
     TextEdit,
+    Location,
 )
 
 from . import dump
@@ -195,6 +198,37 @@ async def completion(params: CompletionParams) -> Optional[CompletionList]:
     https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_completion
     """
     return await server.custom.completion_request(params)
+
+
+@server.feature(DEFINITION)
+async def definition(params: DefinitionParams) -> Optional[List[Location]]:
+    """
+    The go to definition request is sent from the client to the server to resolve
+    the definition location of a symbol at a given text document position.
+
+
+    `params` notable/illustrative fields (non-exhaustive):
+    ```
+    TextDocumentPositionParams {
+        text_document: TextDocumentIdentifier
+        position: Position
+    }
+    ```
+
+    Returns. Notable/illustrative fields (non-exhaustive):
+    ```
+    [
+        Location {
+            uri: str
+            range: Range
+        }
+        ...
+    ]
+    ```
+
+    https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_definition
+    """
+    return await server.custom.definition_request(params)
 
 
 @server.feature(

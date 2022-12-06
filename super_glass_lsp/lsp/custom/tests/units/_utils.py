@@ -2,6 +2,7 @@ import typing
 from typing import Dict, Optional, List
 
 import pytest  # noqa
+from unittest.mock import PropertyMock
 
 from pygls.workspace import Document
 
@@ -23,7 +24,8 @@ def create_server(
 
     mocker.patch(
         "pygls.workspace.Document.source",
-        return_value="",
+        new_callable=PropertyMock,
+        return_value=source,
     )
 
     subprocess_mock = mocker.patch(

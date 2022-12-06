@@ -10,24 +10,27 @@ configs:
     <<: *defaults
     lsp_feature: workspace_edit
     # Period is optional. If it is set then Super Glass calls it every `period` amount of time.
-    period: 5
+    period: 60
+    timeout: 15
     command: |
-      width=20
+      width=18
       json="$(himalaya --output json list)"
       count="$(echo $json | jq length)"
-      head1="    Subject          |        From          | View  |Archive|Delete "
-      head2="---------------------|----------------------|-------|-------|-------"
+      head1=" ID |   Subject          |       From         |           Actions        "
+      head2="----|--------------------|--------------------|--------------------------"
       output="$head1\n$head2"
       for i in `seq 0 "$((count - 1))"`
       do
+        id=$(echo "$json" | jq --raw-output ".[$i].id")
         subject=$(echo "$json" | jq --raw-output ".[$i].subject" | head -c $width)
         sender=$(echo "$json" | jq --raw-output ".[$i].sender" | head -c $width)
-        buttons="   📖  |   📥  |  ❌  "
-        line="$(printf '%-'$width's' "$subject") | $(printf '%-'$width's' "$sender") |$buttons"
+        buttons="{View} {Archive} {Delete}"
+        line=" $id  | $(printf '%-'$width's' "$subject") | $(printf '%-'$width's' "$sender") | $buttons"
         output="$output\n$line"
       done
       echo "TextDocumentEdit {workspace_root}/inbox.md 0:0,-1:-1"
       echo "# Inbox\n"
+      echo "{New} {Refresh}"
       echo "$output"
     parsing:
       formats:
@@ -45,43 +48,64 @@ configs:
     <<: *defaults
     lsp_feature: goto_definition
     command:
-      # Here's a good candidate for "work progress start" notification
+      # * Here's a good candidate for "work progress start" notification
       - |
-        id=$(cat {file} | get line from {range} | grep [:num:]) # pseudo code!
-        button=$(cat {file} | get button from {range} | grep '[*]') # pseudo code!
-        if [[ button == reply]]; then
-          echo "call email_client/send_email $id"
-        fi
-        if [[ button == reply]]; then
-          echo "call email_client/reply_email $id"
-        fi
-        if [[ button == read]]; then
-          echo "call email_client/read_email $id"
-        fi
-        if [[ button == archive]]; then
-          echo "call email_client/archive_email $id"
-        fi
-      # Here's a good candidate for "work progress end" notification
+        id=$(echo "{line}" | sed 's@^[^0-9]*\([0-9]\+\).*@\1@')
 
-      # Also a notification to say that whatever just happened was successful
+        if [ "{word}" == "{Refresh}" ]; then
+          echo "call inbox"
+        fi
 
-      # TODO: create new token {previous exit code}
+        if [ "{word}" == "{View}" ]; then
+          echo "call read_email $id"
+        fi
+
+        if [ "{word}" == "{Archive}" ]; then
+          echo "call archive_email $id"
+        fi
+
+        if [ "{word}" == "{Delete}" ]; then
+          echo "call delete_email $id"
+        fi
+
+        if [ "{word}" == "{New}" ]; then
+          echo "call new_email"
+        fi
+
+        if [ "{word}" == "{Send}" ]; then
+          echo "call send_email new"
+        fi
+      # * Here's a good candidate for "work progress end" notification
+
+      # * Also a notification to say that whatever just happened was successful
+
+      # * TODO: create new token {previous exit code}
 
       - |
-        if [ {previous_exit_code} != 0 ]; then
-          exit 1
+        id=$(echo "{line}" | sed 's@^[^0-9]*\([0-9]\+\).*@\1@')
+
+        if [ "{word}" == "{View}" ]; then
+          echo "{workspace_root}/$id.mime 0:0,0:0"
         fi
-        id=$(cat {file} | get line from {range} | grep [:num:]) # pseudo code!
-        button=$(cat {file} | get button from {range} | grep '[*]') # pseudo code!
-        if [[ button == reply]]; then
-          echo "drafts/$id.mime 0:0,0:0"
+
+        if [ "{word}" == "{Archive}" ]; then
+          echo "{workspace_root}/inbox.md 0:0,0:0"
         fi
-        if [[ button == read]]; then
-          echo "$id.mime 0:0,0:0"
+
+        if [ "{word}" == "{Delete}" ]; then
+          echo "{workspace_root}/inbox.md 0:0,0:0"
         fi
-        if [[ button == archive]]; then
-          echo "inbox.md 0:0,0:0"
+
+        if [ "{word}" == "{New}" ]; then
+          echo "{workspace_root}/new.mime 0:0,0:0"
         fi
+
+        if [ "{word}" == "{Send}" ]; then
+          echo "{workspace_root}/inbox.md 0:0,0:0"
+        fi
+
+      # Noops for other buttons right? Other than show the result of LSP Progress or something
+
     parsing:
       formats:
         - "{uri} {range}" # that's the default so not necessarily needed
@@ -94,76 +118,65 @@ configs:
     # the client or this LSP server itself using the `call <command> <args>` convention. Typically you
     # can offer the user this command in a code action. The command name is derived from the Super Glass
     # app name amd YAML config ID. So `himalaya/read_email` in this case.
-    callable:
-      name: "himalaya/new_email" # that's the default anyway, so not really needed
     command: |
-      text="$(himalaya read {id})"
-      echo "TextDocumentEdit {workspace_root}/new.mime 0:0,0:0"
-      echo "
-      Actions: [Send]
+      touch {workspace_root}/new.mime
+      echo "TextDocumentEdit {workspace_root}/new.mime 0:0,-1:-1"
+      echo "{Send}
 
-      From: Some One <someone@example.com>
-      MIME-Version: 1.0
-      Content-Type: multipart/mixed; boundary='XXXXboundary text'
-
-      This is a multipart message in MIME format.
-
-      --XXXXboundary text
-      Content-Type: text/plain
-
-      this is the body text
-
-      --XXXXboundary text
+      From:
+      To:
+      Subject:
+      : Write the email after this line
       "
+
+  send_email:
+    <<: *defaults
+    lsp_feature: workspace_edit
+    piped: true # Isn't that default anyway
+    timeout: 15
+    command: |
+      cat - | sed -e 's/: Write the email after this line//' | tail -n +3 | himalaya send
+      echo "DeleteFile {workspace_root}/{args}.mime 0:0,0:0"
 
   reply_email:
     <<: *defaults
     lsp_feature: workspace_edit
-    callable:
-      name: "himalaya/reply_email"
-      args: "{id}"
     command: |
       # Create new email (shared code with new_email?) using quoted (>) body of existing email
       # I think the reply body could be copied from the file, rather than re-downloading it?
       # `cat inbox/{id}.mime > drafts/{id}.md | tee prepend >`
-      echo "TextDocumentEdit {workspace_root}/{id}.md 0:0,0:0"
+      echo "TextDocumentEdit {workspace_root}/{args}.mime 0:0,0:0"
       echo "$text"
 
   read_email:
     <<: *defaults
     lsp_feature: workspace_edit
-    callable:
-      name: "himalaya/read_email"
-      args: "{id}"
     command: |
-      text="$(himalaya read {id})"
-      echo "TextDocumentEdit {workspace_root}/{id}.md 0:0,0:0"
+      touch {workspace_root}/{args}.mime
+      text="$(himalaya read {args})"
+      echo "TextDocumentEdit {workspace_root}/{args}.mime 0:0,-1:-1"
       echo "$text"
 
   archive_email:
     <<: *defaults
     lsp_feature: workspace_edit
-    callable:
-      args: "{id}"
-    command: |
-      himalaya move {id} Archive
-      echo "DocumentDelete {workspace_root}/{id}.md" # TODO: or maybe just close it?
-    parsing:
-      formats:
-        - "{kind} {uri}"
+    command:
+      - |
+        himalaya move {args} Archive >&2
+        echo "call inbox"
+      - |
+        echo "DeleteFile {workspace_root}/{args}.mime 0:0,0:0"
 
-  send_email:
+  # TODO: Confirmation. Edit the button to be a warning "⚠️", with a diagnostic that says "Are you sure?"
+  delete_email:
     <<: *defaults
     lsp_feature: workspace_edit
-    callable:
-      args: "{id}"
-    command: |
-      destination=$(cat {file} | extract destination from header)
-      cat {file} | himalaya send "$destination" # maybe himalaya aleady extracts destination from header?
-      echo "DocumentDelete {workspace_root}/{id}.md" # TODO: or maybe just close it?
-    parsing:
-      formats:
-        - "{kind} {uri}"
+    command:
+      - |
+        himalaya delete {args} >&2
+        echo "call inbox"
+      - |
+        echo "DeleteFile {workspace_root}/{args}.mime 0:0,0:0"
 
 
 # Potential inbox.md
