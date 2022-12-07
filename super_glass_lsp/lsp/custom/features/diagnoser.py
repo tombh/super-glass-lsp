@@ -1,22 +1,22 @@
-import typing
-from typing import TYPE_CHECKING, List, Optional, Dict
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from parse import parse  # type: ignore
 
-from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity, MessageType
+from pygls.lsp.types import Diagnostic, Position, Range, DiagnosticSeverity
 
 from super_glass_lsp.lsp.custom.config_definitions import (
     OutputParsingConfig,
     LSPFeature,
 )
-from super_glass_lsp.lsp.custom.features._feature import Feature
-from super_glass_lsp.lsp.custom.features._debounce import Debounce
+from ._feature import Feature
+from ._debounce import Debounce
+from ._commands import Commands
 
 
-class Diagnoser(Feature):
+class Diagnoser(Feature, Commands):
     @classmethod
     async def run_all(cls, server: "CustomLanguageServer", text_doc_uri: str) -> None:
         configs = Feature.get_configs(server, text_doc_uri, LSPFeature.diagnostic)
@@ -84,13 +84,8 @@ class Diagnoser(Feature):
             return DiagnosticSeverity.Information
         return DiagnosticSeverity.Error
 
-    def parse_line(self, line: str) -> Diagnostic:
-        if self.config.parsing is not None:
-            config = self.config.parsing
-        else:
-            # TODO: I think we're using 2 different defaults for emptpy format now?
-            config = OutputParsingConfig(**typing.cast(Dict, {"formats": ["{line}"]}))
-
+    def parse_line(self, line: str) -> Optional[Diagnostic]:
+        config = self.get_parsing_config()
         for format_string in config.formats:
             maybe_diagnostic = self.parse_line_maybe(
                 config, format_string, line
@@ -98,13 +93,8 @@ class Diagnoser(Feature):
             if maybe_diagnostic is not None:
                 return maybe_diagnostic
 
-        summary = "Super Glass failed to parse shell output"
-        command = f"Command: `{self.config.command}`"
-        debug = f"{summary}\n{command}\nOutput: {line}"
-        self.server.logger.warning(debug)
-        self.server.show_message(debug, msg_type=MessageType.Warning)
-        # TODO: Maybe not send a diagnostic if there was an error?
-        return self.build_diagnostic_object(summary)
+        self.parsing_failed(line)
+        return None
 
     def parse_line_maybe(
         self, parsing: OutputParsingConfig, format_string: str, line: str
@@ -170,5 +160,6 @@ class Diagnoser(Feature):
 
         for line in output.splitlines():
             diagnostic = self.parse_line(line)
-            diagnostics.append(diagnostic)
+            if diagnostic is not None:
+                diagnostics.append(diagnostic)
         return diagnostics

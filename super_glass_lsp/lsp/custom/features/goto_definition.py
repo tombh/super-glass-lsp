@@ -8,10 +8,15 @@ from parse import parse  # type: ignore
 from pygls.lsp.types import Position, Location
 
 from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.features._feature import Feature
+from ._feature import Feature
+from ._commands import Commands
+
+# `uri`: File where definition is.
+# `range`: Exact character range where definition is.
+DEFAULT_FORMAT = "{uri} {start_line}:{start_char},{end_line}:{end_char}"
 
 
-class GotoDefinition(Feature):
+class GotoDefinition(Feature, Commands):
     @classmethod
     async def run_all(
         cls,
@@ -33,14 +38,13 @@ class GotoDefinition(Feature):
         return definitions
 
     async def get_location(self, cursor_position: Position) -> List[Location]:
-        default_format = "{uri} {start_line}:{start_char},{end_line}:{end_char}"
         word = self.get_wordish_under_cursor(cursor_position)
         line = self.get_line_under_cursor(cursor_position)
         output = await self.run_cli_tool(line, word, cursor_position)
 
         locations = []
         for line in output.splitlines():
-            parsed = parse(default_format, output)
+            parsed = parse(DEFAULT_FORMAT, output)
             if parsed is None:
                 continue
             location = Location(
@@ -62,9 +66,6 @@ class GotoDefinition(Feature):
         word: str,
         cursor_position: Position,
     ) -> str:
-        self.server.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!")
-        self.server.logger.debug(line)
-        self.server.logger.debug("!!!!!!!!!!!!!!!!!!!!!!!")
         replacements = [
             ("{line}", line),
             ("{word}", word),

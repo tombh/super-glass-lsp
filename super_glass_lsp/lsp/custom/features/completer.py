@@ -13,11 +13,12 @@ from pygls.lsp import (
 )
 
 from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.features._feature import Feature
-from super_glass_lsp.lsp.custom.features._debounce import Debounce
+from ._feature import Feature
+from ._commands import Commands
+from ._debounce import Debounce
 
 
-class Completer(Feature):
+class Completer(Feature, Commands):
     @classmethod
     async def run_all(
         cls,
@@ -74,12 +75,14 @@ class Completer(Feature):
         if isinstance(self.command, list):
             raise Exception("Completions do not support multiple commands")
 
-        command = self.command
-
-        # TODO: probably refactor into a list of Tuple pairs?
-        command = command.replace("{word}", word)
-        command = command.replace("{cursor_line}", str(cursor_position.line))
-        command = command.replace("{cursor_char}", str(cursor_position.character))
+        replacements = [
+            ("{word}", word),
+            ("{cursor_line}", str(cursor_position.line)),
+            ("{cursor_char}", str(cursor_position.character)),
+        ]
+        command = self.resolve_commands(replacements)
+        if isinstance(command, list):
+            raise Exception
 
         result = await self.shell(command)
         return result.stdout

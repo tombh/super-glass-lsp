@@ -1,5 +1,4 @@
-import typing
-from typing import Optional, Dict, TYPE_CHECKING, Union
+from typing import Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from super_glass_lsp.lsp.server import CustomLanguageServer
@@ -14,18 +13,28 @@ from pygls.lsp.types import (
     TextDocumentEdit,
     DeleteFile,
     TextDocumentIdentifier,
-    MessageType,
     TextEdit,
 )
 
-from super_glass_lsp.lsp.custom.features._feature import Feature
+from ._feature import Feature
+from ._commands import Commands
 from super_glass_lsp.lsp.custom.config_definitions import (
     LSPFeature,
     OutputParsingConfig,
 )
 
+# `kind`: TextDocumentEdit | CreateFile | RenameFile | DeleteFile
+# `uri`: Text document URI
+# `range` (only for TextDocumentEdit): start_line,start_char,end_line,end_char
+# `text_edit`: All remaining lines
+DEFAULT_FORMATTERS = [
+    "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}",
+    "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}",
+    "{kind} {uri}",
+]
 
-class WorkspaceEdit(Feature):
+
+class WorkspaceEdit(Feature, Commands):
     @classmethod
     def start_all_daemons(
         cls,
@@ -82,24 +91,8 @@ class WorkspaceEdit(Feature):
         self.server.logger.debug("Sending Workspace Edit")
         self.server.lsp.apply_edit(workspace_edit, f"{self.config_id} document update")
 
-    # TODO: Refactor with what Diagnoser is also doing
     def build_workspace_edit(self, output: str) -> Optional[WorkspaceEditRequest]:
-        default_formats = [
-            "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}",
-            "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}",
-            "{kind} {uri}",
-        ]
-
-        if (
-            self.config.parsing is not None
-            and self.config.parsing != OutputParsingConfig.default()
-        ):
-            config = self.config.parsing
-        else:
-            config = OutputParsingConfig(
-                **typing.cast(Dict, {"formats": default_formats})
-            )
-
+        config = self.get_parsing_config(DEFAULT_FORMATTERS)
         for format_string in config.formats:
             maybe_workspace_edit = self.parse_output(
                 config, format_string, output
@@ -107,18 +100,9 @@ class WorkspaceEdit(Feature):
             if maybe_workspace_edit is not None:
                 return maybe_workspace_edit
 
-        summary = "Super Glass failed to parse shell output"
-        command = f"Command: `{self.config.command}`"
-        debug = f"{summary}\n{command}\nOutput: {output}"
-        self.server.logger.warning(debug)
-        self.server.show_message(debug, msg_type=MessageType.Warning)
+        self.parsing_failed(output)
         return None
 
-    # `kind`: TextDocumentEdit | CreateFile | RenameFile | DeleteFile
-    # `uri`: Text document URI
-    # `range` (only for TextDocumentEdit): start_line,start_char,end_line,end_char
-    # `text_edit`: All remaining lines
-    # TODO: perhaps this could be made a default formatter?
     def parse_output(
         self, parsing: OutputParsingConfig, format_string: str, output: str
     ) -> Optional[WorkspaceEditRequest]:
@@ -156,5 +140,6 @@ class WorkspaceEdit(Feature):
                 uri=uri,
             )
 
-        # Also CreateFile, RenameFile can go in the list
+        # TODO: Also CreateFile, RenameFile
+
         return WorkspaceEditRequest(document_changes=[edit])

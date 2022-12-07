@@ -6,6 +6,7 @@ import logging
 
 from pygls.lsp.types import InitializeParams, Diagnostic
 from pygls import server as pygls_server
+from pygls.workspace import Document
 
 from .custom.hub import Hub as CustomFeatures
 from .custom.config_definitions import (
@@ -133,5 +134,5 @@ class CustomLanguageServer(pygls_server.LanguageServer):
         """Return the server's actual configuration."""
         return self.config
 
-    def get_document_from_uri(self, uri: str):
+    def get_document_from_uri(self, uri: str) -> Document:
         return self.workspace.get_document(uri)

@@ -8,13 +8,14 @@ from pygls.lsp.types import (
 )
 
 from super_glass_lsp.lsp.custom.config_definitions import LSPFeature
-from super_glass_lsp.lsp.custom.features._feature import Feature
-from super_glass_lsp.lsp.custom.features._debounce import Debounce
+from ._feature import Feature
+from ._debounce import Debounce
+from ._commands import Commands
 
 SuperGlassFormatResult = Optional[List[TextEdit]]
 
 
-class Formatter(Feature):
+class Formatter(Feature, Commands):
     @classmethod
     async def run_all(
         cls, server: "CustomLanguageServer", text_doc_uri: str
