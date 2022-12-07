@@ -141,7 +141,14 @@ class Diagnoser(Feature, Commands):
             raise Exception("Diagnostics do not support multiple commands")
 
         output = ""
-        result = await self.shell(self.command, check=False)
+        result = await self.shell(
+            self.command,
+            # By default shell output is allowed to exit with non-zero code.
+            # This seems to be the more common behaviour of formatters. Namely that
+            # they fail if formatting is needed, but nevertheless successfully output
+            # the formatted version of the file.
+            check=False,
+        )
 
         if self.config.stdout and result.stdout is not None:
             output = result.stdout

@@ -27,7 +27,7 @@ class Subprocess:
         config: Config,
         command: str,
         input: Optional[str],
-        check: bool = False,
+        check: bool = True,
     ) -> SubprocessOutput:
         new_env = cls.update_env(config)
         try:
