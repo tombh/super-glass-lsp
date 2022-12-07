@@ -59,6 +59,7 @@ class Subprocess:
                 for child in parent.children(recursive=True):
                     child.terminate()
                 parent.terminate()
+            return output
         if process.returncode is None:
             raise Exception("Completed subprocess exited without return code")
         if check and process.returncode > 0:
