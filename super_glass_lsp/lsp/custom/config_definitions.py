@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 
 ShellCommand = Union[str, List[str]]
 
+DEFAULT_FORMATTERS = ["{msg}"]
+
 
 class AutoName(Enum):
     def _generate_next_value_(name, start, count, last_values):
@@ -18,7 +20,7 @@ class OutputParsingConfig(BaseModel):
 
     @classmethod
     def default(cls):
-        return cls(formats=["{msg}"])
+        return cls(formats=DEFAULT_FORMATTERS)
 
     formats: List[str] = Field()
     """
