@@ -46,7 +46,7 @@ class Formatter(Feature, Commands):
         if isinstance(self.command, list):
             raise Exception("Formatters do not support multiple commands")
 
-        result = await self.shell(self.command, check=False)
+        result = await self.shell(self.command)
         new_text = result.stdout
         # TODO: update the document with the new text so that each tool
         # incrementaly applies its changes on top of the previous
