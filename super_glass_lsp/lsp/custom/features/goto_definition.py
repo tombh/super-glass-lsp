@@ -74,7 +74,9 @@ class GotoDefinition(Feature, Commands):
         ]
         commands = self.resolve_commands(replacements)
 
-        await self.run_pre_commands(commands)
+        is_success = await self.run_pre_commands(commands)
+        if not is_success:
+            return ""
         if isinstance(commands, list):
             final_command = commands[-1]
         else:

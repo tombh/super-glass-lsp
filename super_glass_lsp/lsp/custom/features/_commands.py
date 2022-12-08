@@ -2,6 +2,8 @@ from typing import Tuple, List
 
 from parse import parse  # type: ignore
 
+from pygls.lsp.types import MessageType
+
 from super_glass_lsp.lsp.custom.config_definitions import (
     ShellCommand,
 )
@@ -33,11 +35,11 @@ class Commands(Document, Base):
     async def run_pre_commands(
         self,
         commands: ShellCommand,
-    ):
+    ) -> bool:
         format = "call {config_id} {args}"
 
         if not isinstance(commands, list):
-            return
+            return True
 
         pre_commands = commands[:-1]
 
@@ -45,13 +47,15 @@ class Commands(Document, Base):
             self.server.logger.warning(
                 "Feature.run_pre_commands expected a list of commands but didn't find any"
             )
-            return
+            return True
 
         for command in pre_commands:
             result = await self.shell(command)
             if result.stdout == "":
                 self.server.logger.warning("No output to parse from pre-command")
                 continue
+            if result.is_non_zero_exit():
+                return False
             parsed = parse(format, result.stdout)
             if parsed is not None:
                 args = parsed["args"].strip()
@@ -70,7 +74,11 @@ class Commands(Document, Base):
                     "WorkspaceEdit called as pre-command must have text_doc_uri"
                 )
             workspace_edit.text_doc_uri = self.text_doc_uri
-            await workspace_edit.run_once(args)
+            is_success = await workspace_edit.run_once(args)
+            if not is_success:
+                return False
+
+        return True
 
     async def shell(self, command: str, check: bool = True) -> SubprocessOutput:
         if self.text_doc_uri is not None:
@@ -97,7 +105,12 @@ class Commands(Document, Base):
         }
         self.server.logger.debug(f"subprocess.run() config: {debug}")
 
-        output = await Subprocess.run(self.server, self.config, command, input, check)
-        output.stdout = output.stdout.strip()
-        output.stderr = output.stderr.strip()
-        return output
+        result = await Subprocess.run(self.server, self.config, command, input, check)
+        if check and result.is_non_zero_exit():
+            debug_message = (
+                f"Subprocess error for `{self.config.command}`: {result.stderr}"
+            )
+            client_message = f"{self.config_id}: {result.stderr}"
+            self.server.logger.error(debug_message)
+            self.server.show_message(client_message, msg_type=MessageType.Warning)
+        return result

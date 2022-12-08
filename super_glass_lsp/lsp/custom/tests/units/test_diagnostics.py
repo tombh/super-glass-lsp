@@ -14,6 +14,7 @@ async def test_supplying_multiple_output_formatters(mocker):
         SubprocessOutput(
             "",
             "\n".join(["stdin:1:2 all", "stdin:11 no col", "stdin just the message"]),
+            0,
         ),
     ]
     config = {
@@ -50,8 +51,8 @@ async def test_supplying_multiple_output_formatters(mocker):
 @pytest.mark.asyncio
 async def test_concurrent_diagnosers_dont_clobber(mocker):
     outputs = [
-        SubprocessOutput("", "1"),
-        SubprocessOutput("", "2"),
+        SubprocessOutput("", "1", 0),
+        SubprocessOutput("", "2", 0),
     ]
     config = {
         "config1": {

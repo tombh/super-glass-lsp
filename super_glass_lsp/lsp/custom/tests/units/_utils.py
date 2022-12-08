@@ -28,10 +28,13 @@ def create_server(
         return_value=source,
     )
 
-    subprocess_mock = mocker.patch(
-        "super_glass_lsp.lsp.custom.features._subprocess.Subprocess.run",
-        side_effect=outputs,
-    )
+    if outputs is not None:
+        subprocess_mock = mocker.patch(
+            "super_glass_lsp.lsp.custom.features._subprocess.Subprocess.run",
+            side_effect=outputs,
+        )
+    else:
+        subprocess_mock = None
 
     mocker.patch(
         "super_glass_lsp.lsp.custom.hub.Hub.get_workspace_root",

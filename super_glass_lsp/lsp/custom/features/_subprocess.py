@@ -14,9 +14,13 @@ SubprocessArgs = Dict[str, Any]
 
 
 class SubprocessOutput:
-    def __init__(self, stdout: str, stderr: str):
+    def __init__(self, stdout: str, stderr: str, returncode: Optional[int]):
         self.stdout = stdout
         self.stderr = stderr
+        self.returncode = returncode
+
+    def is_non_zero_exit(self) -> bool:
+        return self.returncode is None or self.returncode > 0
 
 
 class Subprocess:
@@ -44,9 +48,11 @@ class Subprocess:
                 process.communicate(input.encode() if input is not None else None),  # type: ignore
                 timeout=config.timeout,
             )
-            output = SubprocessOutput(stdout.decode(), stderr.decode())
-            server.logger.debug(f"Subprocess STDOUT: {output.stdout}")
-            server.logger.debug(f"Subprocess STDERR: {output.stderr}")
+            result = SubprocessOutput(
+                stdout.decode().strip(), stderr.decode().strip(), process.returncode
+            )
+            server.logger.debug(f"Subprocess STDOUT: {result.stdout}")
+            server.logger.debug(f"Subprocess STDERR: {result.stderr}")
         except asyncio.TimeoutError:
             message = f"Timeout: `{command}` took longer than {config.timeout} seconds"
             server.logger.warning(message)
@@ -59,14 +65,10 @@ class Subprocess:
                 for child in parent.children(recursive=True):
                     child.terminate()
                 parent.terminate()
-            return output
+            return result
         if process.returncode is None:
             raise Exception("Completed subprocess exited without return code")
-        if check and process.returncode > 0:
-            message = f"Subprocess error for `{config.command}`: {output.stderr}"
-            server.logger.error(message)
-            server.show_message(message)
-        return output
+        return result
 
     @classmethod
     def update_env(cls, config: Config) -> Dict:

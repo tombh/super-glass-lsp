@@ -11,7 +11,7 @@ from ._utils import create_server
 @pytest.mark.asyncio
 async def test_completer(mocker):
     outputs = [
-        SubprocessOutput("foo\nbar", ""),
+        SubprocessOutput("foo\nbar", "", 0),
     ]
     config = {
         "config1": {
@@ -34,8 +34,8 @@ async def test_completer(mocker):
 @pytest.mark.asyncio
 async def test_completer_debounce_cache(mocker):
     outputs = [
-        SubprocessOutput("foo1\nbar1", ""),
-        SubprocessOutput("foo2\nba2", ""),
+        SubprocessOutput("foo1\nbar1", "", 0),
+        SubprocessOutput("foo2\nba2", "", 0),
     ]
     config = {
         "config1": {

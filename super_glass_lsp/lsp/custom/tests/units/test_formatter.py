@@ -13,8 +13,8 @@ from ._utils import create_server
 @pytest.mark.asyncio
 async def test_formatter_debounce(mocker):
     outputs = [
-        SubprocessOutput("\n".join(["foo1", "bar1"]), ""),
-        SubprocessOutput("\n".join(["foo2", "bar2"]), ""),
+        SubprocessOutput("\n".join(["foo1", "bar1"]), "", 0),
+        SubprocessOutput("\n".join(["foo2", "bar2"]), "", 0),
     ]
     server, uri, _ = create_server(
         mocker,
@@ -26,7 +26,7 @@ async def test_formatter_debounce(mocker):
             }
         },
         outputs,
-        ""
+        "",
     )
 
     expected = TextEdit(

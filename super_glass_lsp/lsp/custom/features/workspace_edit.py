@@ -65,9 +65,9 @@ class WorkspaceEdit(Feature, Commands):
         text_doc_uri = None  # TODO: think about what text_doc_uri means in this feature
         super().__init__(server, config_id, text_doc_uri)
 
-    async def run_once(self, args: Optional[str] = None):
+    async def run_once(self, args: Optional[str] = None) -> bool:
         if not self.config.has_root_marker(self.server.custom.get_workspace_root()):
-            return
+            return True
 
         replacements = []
         if args:
@@ -75,17 +75,23 @@ class WorkspaceEdit(Feature, Commands):
                 ("{args}", args),
             ]
         commands = self.resolve_commands(replacements)
-        await self.run_pre_commands(commands)
+        is_success = await self.run_pre_commands(commands)
+        if not is_success:
+            return False
 
         if isinstance(commands, list):
             final_command = commands[-1]
         else:
             final_command = commands
         result = await self.shell(final_command)
+        if result.is_non_zero_exit():
+            return False
 
         workspace_edit = self.build_workspace_edit(result.stdout)
         if workspace_edit is not None:
             self.send_workspace_edit(workspace_edit)
+
+        return True
 
     def send_workspace_edit(self, workspace_edit: WorkspaceEditRequest):
         self.server.logger.debug("Sending Workspace Edit")
