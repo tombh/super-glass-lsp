@@ -1,5 +1,12 @@
 version: 2
 
+# NOTE: Gmail needs this config in order to send emails without erroring:
+# ~/.config/himalaya/config.toml
+# ```
+# [gmail.folder-aliases]
+# sent = "[Gmail]/Sent Mail"
+# ````
+
 defaults: &defaults
   timeout: 15
   # The "on" switch. This is the key requirement for making the editor/LSP client turn on
@@ -16,8 +23,8 @@ configs:
       width=18
       json="$(himalaya --output json list)"
       count="$(echo $json | jq length)"
-      head1=" ID |   Subject          |       From         |          Actions         "
-      head2="----|--------------------|--------------------|--------------------------"
+      head1=" ID  |   Subject          |       From         |          Actions         "
+      head2="-----|--------------------|--------------------|--------------------------"
       output="$head1\n$head2"
       for i in `seq 0 "$((count - 1))"`
       do
@@ -25,131 +32,80 @@ configs:
         subject=$(echo "$json" | jq --raw-output ".[$i].subject" | head -c $width)
         sender=$(echo "$json" | jq --raw-output ".[$i].sender" | head -c $width)
         buttons="{View} {Archive} {Delete}"
-        line=" $id  | $(printf '%-'$width's' "$subject") | $(printf '%-'$width's' "$sender") | $buttons"
+        id=$(printf '%-2s' "$id")
+        subject=$(printf '%-'$width's' "$subject")
+        sender=$(printf '%-'$width's' "$sender")
+        line=" $id  | $sender | $sender | $buttons"
         output="$output\n$line"
       done
       echo "TextDocumentEdit {workspace_root}/inbox.md 0:0,-1:-1"
-      echo "# Inbox\n"
       echo "{New} {Refresh}"
       echo "$output"
-    parsing:
-      formats:
-        # `kind`: TextDocumentEdit | CreateFile | RenameFile | DeleteFile
-        # `uri`: Text document URI
-        # Settting end_line and end_char each to `-1` signifies replacing the whole document
-        # `range` (only for TextDocumentEdit): start_line,start_char:end_line,end_char
-        # `text_edit`: All remaining lines
-        # TODO: perhaps this could be made a default formatter?
-        - "{kind} {uri} {start_line}:{start_char},{end_line}:{end_char}\n{text_edit}"
-        - "{kind} {uri} {new_name}"
-        - "{kind} {uri}"
 
   buttons:
     <<: *defaults
     lsp_feature: goto_definition
     command:
-      # * Here's a good candidate for "work progress start" notification
       - |
         id=$(echo "{line}" | sed 's@^[^0-9]*\([0-9]\+\).*@\1@')
 
-        if [ "{word}" == "{Refresh}" ]; then
-          echo "call inbox"
-        fi
-
-        if [ "{word}" == "{View}" ]; then
-          echo "call read_email $id"
-        fi
-
-        if [ "{word}" == "{Reply}" ]; then
-          echo "call reply_email"
-        fi
-
-        if [ "{word}" == "{Archive}" ]; then
-          echo "call archive_email $id"
-        fi
-
-        if [ "{word}" == "{Delete}" ]; then
-          echo "call delete_email $id"
-        fi
-
-        if [ "{word}" == "{New}" ]; then
-          echo "call new_email"
-        fi
-
-        if [ "{word}" == "{Send}" ]; then
-          echo "call send_email"
-        fi
-      # * Here's a good candidate for "work progress end" notification
-
-      # * Also a notification to say that whatever just happened was successful
-
-      # * TODO: create new token {previous exit code}
+        [ "{word}" == "{Refresh}" ] && echo "call inbox"
+        [ "{word}" == "{View}" ] && echo "call read_email $id"
+        [ "{word}" == "{Reply}" ] && echo "call reply_email"
+        [ "{word}" == "{Archive}" ] && echo "call archive_email $id"
+        [ "{word}" == "{Delete}" ] && echo "call delete_email $id"
+        [ "{word}" == "{New}" ] && echo "call new_email"
+        [ "{word}" == "{Send}" ] && echo "call send_email"
+        exit 0 # TODO: Why are these `exit`s needed?
 
       - |
         id=$(echo "{line}" | sed 's@^[^0-9]*\([0-9]\+\).*@\1@')
 
-        if [ "{word}" == "{View}" ]; then
-          echo "{workspace_root}/$id.mime 0:0,0:0"
-        fi
+        [ "{word}" == "{View}" ] && echo "{workspace_root}/$id.mime 0:0,0:0"
+        [ "{word}" == "{Archive}" ] && echo "{workspace_root}/inbox.md 0:0,0:0"
+        [ "{word}" == "{Delete}" ] && echo "{workspace_root}/inbox.md 0:0,0:0"
+        [ "{word}" == "{New}" ] && echo "{workspace_root}/new.mime 0:0,0:0"
+        [ "{word}" == "{Send}" ] && echo "{workspace_root}/inbox.md 0:0,0:0"
+        exit 0
 
-        if [ "{word}" == "{Archive}" ]; then
-          echo "{workspace_root}/inbox.md 0:0,0:0"
-        fi
-
-        if [ "{word}" == "{Delete}" ]; then
-          echo "{workspace_root}/inbox.md 0:0,0:0"
-        fi
-
-        if [ "{word}" == "{New}" ]; then
-          echo "{workspace_root}/new.mime 0:0,0:0"
-        fi
-
-        if [ "{word}" == "{Send}" ]; then
-          echo "{workspace_root}/inbox.md 0:0,0:0"
-        fi
-
-      # Noops for other buttons right? Other than show the result of LSP Progress or something
-
-    parsing:
-      formats:
-        - "{uri} {range}" # that's the default so not necessarily needed
-
-  # We'd know it was a new email by the name of the file? Eg; new.mime? Or put them in drafts folder?
+  # TODO: Add diagnostics for missing or incorrect fields
   new_email:
     <<: *defaults
     lsp_feature: workspace_edit
-    # `callable` allows this config to be called by either a LSP `workspace/executeCommand` request from
-    # the client or this LSP server itself using the `call <command> <args>` convention. Typically you
-    # can offer the user this command in a code action. The command name is derived from the Super Glass
-    # app name amd YAML config ID. So `himalaya/read_email` in this case.
     command: |
       touch {workspace_root}/new.mime
       echo "TextDocumentEdit {workspace_root}/new.mime 0:0,-1:-1"
-      echo "{Send}
+      echo "{Send}"
+      echo ""
+      echo "From: "
+      echo "To: "
+      echo "Subject: "
+      echo ": Write the email after this line"
 
-      From:
-      To:
-      Subject:
-      : Write the email after this line
-      "
-
+  # : Error: cannot append message to mailbox Sent
+  # Caused by:
+  #   No Response: Folder doesn't exist. (Failure)
   send_email:
     <<: *defaults
     lsp_feature: workspace_edit
-    piped: true # Isn't that default anyway
     command: |
-      cat - | sed -e 's/: Write the email after this line//' | tail -n +3 | himalaya send
+      cat - \
+        | sed -e 's/: Write the email after this line//' \
+        | tail -n +3 \
+        | himalaya send || exit 1
       echo "DeleteFile {file} 0:0,0:0"
 
+  # TODO: Add diagnostics for missing or incorrect fields
   reply_email:
     <<: *defaults
     lsp_feature: workspace_edit
     # TODO: Move cussor to start of new email body
     command: |
       text=$(cat -)
-      recipient=$(echo "$text" | grep "^To:" | sed -e 's/To: //')
-      sender=$(echo "$text" | grep "^From:" | sed -e 's/From: //')
-      subject=$(echo "$text" | grep "Subject" | sed -e 's/Subject: //')
+      head=$(echo "$text" | head -n6)
+      recipient=$(echo "$head" | grep "^To:" | sed -e 's/To: //')
+      sender=$(echo "$head"  | grep "^From:" | sed -e 's/From: //')
+      subject=$(echo "$head" | grep "Subject" | sed -e 's/Subject: //')
       history=$(
         echo "$text" \
           | tail -n +7 \
@@ -179,10 +135,11 @@ configs:
           --header From \
           --header Subject
         )"
+      text_plain=$(echo "$text" | sed -e 's/<[^>]*>//g')
       echo "TextDocumentEdit {workspace_root}/{args}.mime 0:0,-1:-1"
       echo "{Reply}"
       echo ""
-      echo "$text"
+      echo "$text_plain"
 
   archive_email:
     <<: *defaults
