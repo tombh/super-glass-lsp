@@ -14,7 +14,7 @@ from ._utils import create_server
 @pytest.mark.asyncio
 async def test_debounce_restricts(mocker):
     outputs = [
-        SubprocessOutput("", "1"),
+        SubprocessOutput("", "1", 0),
     ]
     config = {
         "config1": {
@@ -37,9 +37,9 @@ async def test_debounce_restricts(mocker):
 @pytest.mark.asyncio
 async def test_debounce_releases(mocker):
     outputs = [
-        SubprocessOutput("", "all"),
-        SubprocessOutput("", "all different"),
-        SubprocessOutput("", "all moore"),
+        SubprocessOutput("", "all", 0),
+        SubprocessOutput("", "all different", 0),
+        SubprocessOutput("", "all moore", 0),
     ]
     config = {
         "config1": {
@@ -76,8 +76,8 @@ async def test_debounce_releases(mocker):
 @pytest.mark.asyncio
 async def test_debounce_defers(mocker):
     outputs = [
-        SubprocessOutput("", "all"),
-        SubprocessOutput("", "all different"),
+        SubprocessOutput("", "all", 0),
+        SubprocessOutput("", "all different", 0),
     ]
     config = {
         "config1": {

@@ -48,6 +48,8 @@ class Formatter(Feature, Commands):
 
         result = await self.shell(self.command)
         new_text = result.stdout
+        if result.is_non_zero_exit():
+            return None
         # TODO: update the document with the new text so that each tool
         # incrementaly applies its changes on top of the previous
         edit = self.new_text_to_textedit(new_text)
