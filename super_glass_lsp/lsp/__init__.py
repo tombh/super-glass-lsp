@@ -12,7 +12,6 @@ def dump(obj) -> str:
 
         fields = {}
         for k, v in o.__dict__.items():
-
             if v is None:
                 continue
 

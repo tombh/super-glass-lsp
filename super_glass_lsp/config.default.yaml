@@ -39,6 +39,7 @@ configs:
         --no-error-summary \
         --follow-imports=silent \
         {file}
+    use_lsp_progress: true
     piped: false
     stdout: true
     timeout: 15

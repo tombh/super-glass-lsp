@@ -67,7 +67,10 @@ TODO:
 * [ ] Explain all the fields and tokens for each LSP feature
 * [ ] Remember to describe the format array lines priorities
 * [ ] How to set up the debug logs. But also maybe a LSP option to get all the debug in your editor
+  * [ ] Mention the test logs too. Because the E2E tests run in a subprocess
 * [ ] Remember to advise that some diagnostic tools output on STDERR, not STDOUT
+
+* [ ] Can you have both a Super Glass app _and_ default configs?? I think at the moment you can't? (I don't think so)
 
 ## Editor Setups
 

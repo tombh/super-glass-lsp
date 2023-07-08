@@ -50,6 +50,9 @@ async def test_supplying_multiple_output_formatters(mocker):
 
 @pytest.mark.asyncio
 async def test_concurrent_diagnosers_dont_clobber(mocker):
+    mocker.patch("pygls.protocol.JsonRPCProtocol.send_request")
+    mocker.patch("pygls.protocol.JsonRPCProtocol.notify")
+
     outputs = [
         SubprocessOutput("", "1", 0),
         SubprocessOutput("", "2", 0),

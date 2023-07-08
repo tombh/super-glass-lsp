@@ -13,6 +13,9 @@ from ._utils import create_server
 
 @pytest.mark.asyncio
 async def test_debounce_restricts(mocker):
+    mocker.patch("pygls.protocol.JsonRPCProtocol.send_request")
+    mocker.patch("pygls.protocol.JsonRPCProtocol.notify")
+
     outputs = [
         SubprocessOutput("", "1", 0),
     ]
@@ -36,6 +39,8 @@ async def test_debounce_restricts(mocker):
 
 @pytest.mark.asyncio
 async def test_debounce_releases(mocker):
+    mocker.patch("pygls.protocol.JsonRPCProtocol.notify")
+
     outputs = [
         SubprocessOutput("", "all", 0),
         SubprocessOutput("", "all different", 0),
@@ -75,6 +80,8 @@ async def test_debounce_releases(mocker):
 
 @pytest.mark.asyncio
 async def test_debounce_defers(mocker):
+    mocker.patch("pygls.protocol.JsonRPCProtocol.notify")
+
     outputs = [
         SubprocessOutput("", "all", 0),
         SubprocessOutput("", "all different", 0),

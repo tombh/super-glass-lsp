@@ -51,6 +51,7 @@ async def test_finding_wordish_under_cursor(mocker):
     assert wordish == "🚢"
 
 
+# TODO: Put in a integration/ folder
 @pytest.mark.asyncio
 async def test_command_failure(mocker):
     notifier = mocker.patch("pygls.protocol.JsonRPCProtocol.notify")
@@ -79,6 +80,7 @@ async def test_command_failure(mocker):
     assert notification.message == "config: error"
 
 
+# TODO: Put in a integration/ folder
 @pytest.mark.asyncio
 async def test_pre_commands(mocker):
     send_request = mocker.patch("pygls.protocol.JsonRPCProtocol.send_request")

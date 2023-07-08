@@ -1,4 +1,7 @@
-from typing import Tuple, List
+from typing import Tuple, List, TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from super_glass_lsp.lsp.server import CustomLanguageServer
 
 from parse import parse  # type: ignore
 
@@ -10,11 +13,21 @@ from super_glass_lsp.lsp.custom.config_definitions import (
 from ._subprocess import Subprocess, SubprocessOutput
 from ._base import Base
 from ._document import Document
+from .work_done_progress import WorkDoneProgress
 
 Replacements = List[Tuple[str, str]]
 
 
 class Commands(Document, Base):
+    def __init__(
+        self,
+        server: "CustomLanguageServer",
+        config_id: str,
+        text_doc_uri: Optional[str] = None,
+    ):
+        super().__init__(server, config_id, text_doc_uri)
+        self.is_progressing = False
+
     def resolve_commands(self, replacements: Replacements) -> ShellCommand:
         resolved: ShellCommand
         commands = self.command
@@ -65,7 +78,12 @@ class Commands(Document, Base):
                 if parsed is None:
                     raise Exception(f"Couldn't parse output from pre-command: {result}")
 
-            # TODO: at least diagnostic notifications could be supported as pre-commands too
+            # TODO:
+            #   * At least diagnostic notifications could be supported as pre-commands too.
+            #   * This isn't exactly the best place to note this, but work_done_progress is
+            #     part of this too. As in, it's an out of band, unsolicited request to the client.
+            #     Is there a more abstract way of designing these features? Certainly want to
+            #     talk about them in the docs.
             from super_glass_lsp.lsp.custom.features.workspace_edit import WorkspaceEdit
 
             workspace_edit = WorkspaceEdit(self.server, parsed["config_id"].strip())
@@ -81,6 +99,13 @@ class Commands(Document, Base):
         return True
 
     async def shell(self, command: str, check: bool = True) -> SubprocessOutput:
+        work = WorkDoneProgress(self.server, self.config_id)
+        await work.progress_start()
+        result = await self._shell(command, check)
+        await work.progress_end()
+        return result
+
+    async def _shell(self, command: str, check: bool = True) -> SubprocessOutput:
         if self.text_doc_uri is not None:
             command = command.replace(
                 "{file}", self.text_doc_uri.replace("file://", "")

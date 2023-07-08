@@ -24,11 +24,11 @@ async def test_inbox_loads(client: Client, uri: str, patched: MagicMock):
         if waited > max_wait:
             assert False, "Timeout waiting for LSP server to send applyEdit request"
         calls = patched.call_args_list
-        if len(calls) == 2:
+        if len(calls) == 4:
             break
         await asyncio.sleep(pause)
 
-    args, _kwargs = calls[1]
+    args, _kwargs = calls[3]
     data = args[0]
     body = data["params"]["edit"]["documentChanges"][0]["edits"][0]["newText"]
     assert "1   | Google" in body

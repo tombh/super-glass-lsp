@@ -15,7 +15,7 @@ class Base:
         self,
         server: "CustomLanguageServer",
         config_id: str,
-        text_doc_uri: Optional[str],
+        text_doc_uri: Optional[str] = None,
     ):
         if (
             server.configuration is None

@@ -62,8 +62,7 @@ class WorkspaceEdit(Feature, Commands):
             await asyncio.sleep(float(self.config.period))
 
     def __init__(self, server: "CustomLanguageServer", config_id: str):
-        text_doc_uri = None  # TODO: think about what text_doc_uri means in this feature
-        super().__init__(server, config_id, text_doc_uri)
+        super().__init__(server, config_id, None)
 
     async def run_once(self, args: Optional[str] = None) -> bool:
         if not self.config.has_root_marker(self.server.custom.get_workspace_root()):

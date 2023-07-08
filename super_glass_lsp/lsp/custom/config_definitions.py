@@ -47,6 +47,7 @@ class LSPFeature(AutoName):
     formatter = auto()
     workspace_edit = auto()
     goto_definition = auto()
+    work_done_progress = auto()
 
 
 class ConfigBasic(BaseModel):
@@ -59,6 +60,7 @@ class ConfigBasic(BaseModel):
     language_id: Optional[str] = Field()
     root_markers: Optional[List[str]] = Field()
     command: Optional[ShellCommand] = Field()
+    use_lsp_progress: Optional[bool] = Field()
     env: Optional[Dict] = Field()
     piped: Optional[bool] = Field()
     stdout: Optional[bool] = Field()
@@ -110,6 +112,18 @@ class Config(ConfigBasic):
     """
     The command to run, eg; `"jsonlint --strict"`
     """
+
+    use_lsp_progress: bool = Field(False)
+    """
+    Use default LSP progress notifications
+    """
+
+    # TODO: Custom progress reporting behaviour
+    # progress_config: Optional[str] = Field()
+    # """
+    # Name of config block that provides custom progress reporting behaviour.
+    # For example, the ability to use WorkspaceEdit to show a spinner in the editor.
+    # """
 
     env: Dict = Field({})
     """
