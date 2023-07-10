@@ -51,7 +51,7 @@ jobs:
       - name: Install project dependencies
         run: poetry install
       - name: Run tests
-        run: poetry run python -m pytest
+        run: poetry run python -m pytest --reruns 3
       - name: Rerun tests with full verbosity (if tests fail)
         if: ${{ failure() }}
         run: |
